@@ -7,6 +7,7 @@ html(lang="en")
     body
         div(class="login")
             h1 Login
-            input(type="text", class="login-item login-input", placeholder="Username")
-            input(type="password", class="login-item login-input", placeholder="Password")
+            input(type="text", id="username", class="login-item login-input", placeholder="Username")
+            input(type="password", id="password", class="login-item login-input", placeholder="Password")
             button(class="submit login-item") Login
+            script(src="/javascripts/login.js")
