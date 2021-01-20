@@ -1,0 +1,66 @@
+* {
+    font-family: monospace;
+    color: aquamarine;
+    padding: 0%;
+    margin: 0%;
+}
+
+*:focus {
+    outline: none;
+}
+
+html, body {
+    height: 100%;
+    background-color: rgb(22, 22, 22);
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+h1 {
+    margin: 20px;
+}
+
+input.login-input {
+    background-color: transparent;
+    border: solid 1px aquamarine;
+    text-align: center;
+}
+
+input.login-input::placeholder {
+    color: aquamarine;
+}
+
+.login-item {
+    border: none;
+    padding: 5px;
+    margin: 5px;
+    width: 100%;
+    border-radius: 5px;
+}
+
+.submit {
+    color: white;
+    background-color: red;
+    transition: all .2s;
+    font-weight: bolder;
+}
+
+.submit:hover {
+    color: red;
+    background-color: aquamarine;
+}
+
+.login {
+    flex: 0 1 30%;
+    display: flex;
+    flex-direction: column;
+    padding: 5px;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 0 50px gray;
+    border-radius: 10px;
+}
