@@ -59,7 +59,7 @@ input.login-input::placeholder {
 }
 
 .login {
-    flex: 0 1 30%;
+    flex: 0 1 20em;
     display: flex;
     flex-direction: column;
     padding: 5px;

@@ -1,0 +1,18 @@
+html(lang="en")
+    head
+        meta(charset="UTF-8")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        link(rel="stylesheet", href="/stylesheets/chat.css")
+        title Chat
+    body
+        div(class="messages")
+            div(class="message-container")
+            div(class="message-input")
+                button(id="send") Send
+                textarea(, cols="1", rows="1" id="input-message")
+        div(class="navigation")
+            div(class="header")
+                h1= message
+                a(href="/logout")
+                    button(id="logout") Logout
+        script(src="/javascripts/chat.js")

@@ -1,0 +1,84 @@
+* {
+    margin: 0px;
+    padding: 0px;
+    color: green;
+    background-color: transparent;
+}
+
+*:focus {
+    outline: none;
+}
+
+html, body {
+    height: 100%;
+    background-color: black;
+}
+
+body {
+    display: flex;
+}
+
+button {
+    border: 1px solid green;
+    border-radius: 2px;
+    padding: 5px;
+    transition: all .1s linear;
+}
+
+button:hover {
+    background-color: green;
+    color: black;
+}
+
+button:active {
+    transform: scale(0.9);
+}
+
+input, textarea {
+    border: 1px solid green;
+    border-radius: 2px;
+    padding: 5px;
+    resize: none;
+}
+
+.messages {
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.navigation {
+    border-left: 2px solid green;
+    flex: 0 1 30%;
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    flex: 0 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    border-bottom: 2px solid green;
+}
+
+.header h1 {
+    margin: 10px;
+}
+
+.message-container {
+    flex: 1 0 auto;
+}
+
+.message-input {
+    flex: 0 1 auto;
+    display: flex;
+}
+
+#send {
+    flex: 0 1 20%;
+}
+
+#input-message {
+    flex: 1 0 auto;
+}

@@ -17,4 +17,31 @@ submit.onclick = (e) => {
         usrOk = false;
         username.classList.add('invalid')
     }
+    if (usrOk && passOk) {
+        var authContent = {
+            password: password.value,
+            username: username.value
+        }
+        var server = new XMLHttpRequest();
+        server.onreadystatechange = () => {
+            if (server.readyState == 4 && server.status == 200) {
+                var decoded = JSON.parse(server.responseText);
+                if (decoded.login == true) {
+                    document.location.href = '/';
+                } else {
+                    password.classList.add('invalid');
+                    username.classList.add('invalid');
+                }
+            }
+        };
+        server.open('POST', '/login', true);
+        server.setRequestHeader("Content-Type", "application/json");
+        server.send(JSON.stringify(authContent));
+    }
 };
+
+password.addEventListener('keydown', (e) => {
+    if (e.key == 'Enter') {
+        submit.click()
+    }
+})
