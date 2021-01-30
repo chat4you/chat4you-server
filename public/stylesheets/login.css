@@ -1,17 +1,10 @@
 * {
     font-family: monospace;
-    color: green;
-    padding: 0%;
-    margin: 0%;
-}
-
-*:focus {
-    outline: none;
 }
 
 html, body {
     height: 100%;
-    background-color: rgb(22, 22, 22);
+    background-color: var(--background-color);
 }
 
 body {
@@ -26,7 +19,7 @@ h1 {
 
 input.login-input {
     background-color: transparent;
-    border: solid 1px green;
+    border: solid 1px var(--main-color);
     text-align: center;
 }
 
@@ -35,7 +28,7 @@ input.login-input {
 }
 
 input.login-input::placeholder {
-    color: green;
+    color: var(--main-color);
 }
 
 .login-item {
@@ -55,7 +48,7 @@ input.login-input::placeholder {
 
 .submit:hover {
     color: red;
-    background-color: green;
+    background-color: var(--main-color);
 }
 
 .login {
@@ -65,6 +58,6 @@ input.login-input::placeholder {
     padding: 5px;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 0 100px green;
+    box-shadow: 0 0 100px var(--shadow-color);
     border-radius: 10px;
 }

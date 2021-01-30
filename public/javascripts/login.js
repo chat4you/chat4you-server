@@ -34,7 +34,7 @@ submit.onclick = (e) => {
                 }
             }
         };
-        server.open('POST', '/login', true);
+        server.open('POST', '/api/login', true);
         server.setRequestHeader("Content-Type", "application/json");
         server.send(JSON.stringify(authContent));
     }

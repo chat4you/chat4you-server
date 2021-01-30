@@ -3,16 +3,27 @@ html(lang="en")
         meta(charset="UTF-8")
         meta(name="viewport", content="width=device-width, initial-scale=1.0")
         link(rel="stylesheet", href="/stylesheets/chat.css")
+        link(rel="stylesheet", href="/stylesheets/main.css")
         title Chat
     body
         div(class="messages")
             div(class="message-container")
+                div(class="messages-header")
+                    h1(id="chatName") Open a chat to comunicate
+                div(class="messages-parent")
             div(class="message-input")
                 button(id="send") Send
                 textarea(, cols="1", rows="1" id="input-message")
         div(class="navigation")
             div(class="header")
-                h1= message
+                h1 #{fullname}
                 a(href="/logout")
                     button(id="logout") Logout
+            div(class="contacts")
+                div(class="add-contact")
+                    button(class="add-contact-button")
+                        span(class="add-contact-1")
+                        span(class="add-contact-2")
+                    h2 Add contact
+                div(class="contact-list")
         script(src="/javascripts/chat.js")

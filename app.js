@@ -6,7 +6,7 @@ const logger = require('morgan');
 const session = require('express-session');
 const config = require('./config');
 
-const loginRouter = require('./routes/login');
+const apiRouter = require('./routes/api');
 const chatRouter = require('./routes/chat');
 
 const app = express();
@@ -22,7 +22,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({secret: config.session_secret}))
 
-app.use('/login', loginRouter);
+app.use('/api', apiRouter);
 app.use('/', chatRouter);
 
 // catch 404 and forward to error handler

@@ -1,17 +1,7 @@
-* {
-    margin: 0px;
-    padding: 0px;
-    color: green;
-    background-color: transparent;
-}
-
-*:focus {
-    outline: none;
-}
-
-html, body {
+html,
+body {
     height: 100%;
-    background-color: black;
+    background-color: var(--background);
 }
 
 body {
@@ -19,26 +9,32 @@ body {
 }
 
 button {
-    border: 1px solid green;
-    border-radius: 2px;
+    border: 1px solid var(--main-color);
+    border-radius: 0px;
     padding: 5px;
-    transition: all .1s linear;
+    transition: all 0.1s;
+    box-shadow: 2px 2px 4px var(--shadow-color);
 }
 
 button:hover {
-    background-color: green;
-    color: black;
+    background-color: var(--main-color);
+    color: var(--background);
 }
 
 button:active {
     transform: scale(0.9);
 }
 
-input, textarea {
-    border: 1px solid green;
-    border-radius: 2px;
+input,
+textarea {
+    border: 1px solid var(--main-color);
+    border-radius: 0px;
     padding: 5px;
     resize: none;
+}
+
+h1 {
+    margin: 10px;
 }
 
 .messages {
@@ -48,7 +44,7 @@ input, textarea {
 }
 
 .navigation {
-    border-left: 2px solid green;
+    border-left: 1px solid var(--main-color);
     flex: 0 1 30%;
     display: flex;
     flex-direction: column;
@@ -59,19 +55,28 @@ input, textarea {
     display: flex;
     align-items: center;
     justify-content: space-evenly;
-    border-bottom: 2px solid green;
-}
-
-.header h1 {
-    margin: 10px;
+    border-bottom: 1px solid var(--main-color);
 }
 
 .message-container {
-    flex: 1 0 auto;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.messages-header {
+    flex: 0 1 1em;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--main-color);
+}
+
+.messages-parent {
+    flex: 1 1 auto;
 }
 
 .message-input {
-    flex: 0 1 auto;
+    flex: 0 1 3em;
     display: flex;
 }
 
@@ -81,4 +86,47 @@ input, textarea {
 
 #input-message {
     flex: 1 0 auto;
+}
+
+/* The add contact button */
+
+.add-contact {
+    flex: 0 1 70px;
+    display: flex;
+    padding: 10px;
+    justify-content: flex-start;
+    align-items: center;
+    border-bottom: 1px solid var(--main-color);
+}
+
+.add-contact h2 {
+    margin-left: 10px;
+}
+
+.add-contact-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: lightblue;
+    height: 50px;
+    width: 50px;
+    border: none;
+    border-radius: 25px;
+}
+
+.add-contact-button span {
+    display: block;
+    position: absolute;
+    height: 5px;
+    width: 35px;
+    border-radius: 5px;
+    background-color: var(--main-color);
+}
+
+.add-contact-button:hover span {
+    background-color: lightblue;
+}
+
+.add-contact-1 {
+    transform: rotate(90deg);
 }

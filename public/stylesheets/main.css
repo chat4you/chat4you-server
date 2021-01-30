@@ -1,0 +1,26 @@
+@media (prefers-color-scheme: dark) {
+    :root {
+        --background: black;
+        --shadow-color: green;
+        --main-color: green;
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        --background: white;
+        --shadow-color: darkkhaki;
+        --main-color: blue;
+    }
+}
+
+* {
+    margin: 0px;
+    padding: 0px;
+    color: var(--main-color);
+    background-color: transparent;
+}
+
+*:focus {
+    outline: none;
+}
