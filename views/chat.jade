@@ -26,4 +26,7 @@ html(lang="en")
                         span(class="add-contact-2")
                     h2 Add contact
                 div(class="contact-list")
+        script(src="/api/socket.io/socket.io.js")
         script(src="/javascripts/chat.js")
+        script.
+            var me = "#{me}";

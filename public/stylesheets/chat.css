@@ -107,7 +107,7 @@ h1 {
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: lightblue;
+    background-color: var(--forderground-color);
     height: 50px;
     width: 50px;
     border: none;
@@ -124,7 +124,7 @@ h1 {
 }
 
 .add-contact-button:hover span {
-    background-color: lightblue;
+    background-color: var(--forderground-color);
 }
 
 .add-contact-1 {
@@ -134,14 +134,16 @@ h1 {
 .contact-list {
     flex: 1 1 auto;
     display: flex;
+    flex-direction: column;
 }
 
 .contact {
     flex: 0 1 4em;
     text-align: center;
+    justify-content: center;
     transition: all .2s ease-in-out;
 }
 
 .contact:hover {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: var(--forderground-color);
 }

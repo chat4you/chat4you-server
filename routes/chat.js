@@ -5,7 +5,7 @@ router.get("/", (req, res, next) => {
     if (!req.session.login) {
         res.redirect("/login");
     } else {
-        res.render("chat", { fullname: req.session.fullname });
+        res.render("chat", { fullname: req.session.fullname, me: req.session.name});
     }
 });
 

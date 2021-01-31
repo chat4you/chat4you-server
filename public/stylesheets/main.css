@@ -3,6 +3,7 @@
         --background: black;
         --shadow-color: green;
         --main-color: green;
+        --forderground-color: rgba(0, 128, 0, 0.3);
     }
 }
 
@@ -11,6 +12,7 @@
         --background: white;
         --shadow-color: darkkhaki;
         --main-color: blue;
+        --forderground-color: lightblue;
     }
 }
 

@@ -3,7 +3,6 @@ var router = express.Router();
 const crypto = require("crypto");
 const config = require("../config");
 const { Client } = require("pg");
-const { query } = require("express");
 
 const db = new Client(config.db);
 db.connect();
@@ -74,5 +73,22 @@ router.get("/contact", (req, res) => {
         }
     })
 });
+
+router.post("/fullname-by-name", (req, res) => {
+    if (req.body.name) {
+        var get_by_name = `SELECT fullname FROM users WHERE name = '${req.body.name}' LIMIT 1`;
+        db.query(get_by_name, (err, resp) => {
+            if (err) {
+                console.error(err)
+            } else if (resp.rows[0]) {
+                res.json(resp.rows)
+            } else {
+                res.json({status: 'error', error: 'User not found'})
+            }
+        })
+    } else {
+        res.json({status: 'error', error: 'No name specified'})
+    }
+})
 
 module.exports = router;
