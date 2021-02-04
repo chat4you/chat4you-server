@@ -14,10 +14,4 @@ router.get("/login", function (req, res, next) {
     res.render("login", { title: "Login to continue" });
 });
 
-
-router.get("/logout", (req, res) => {
-    delete req.session.login;
-    res.redirect('/')
-});
-
 module.exports = router;

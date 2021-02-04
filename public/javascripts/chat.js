@@ -1,5 +1,5 @@
 async function getFullName(name) {
-    var response = await await fetch("/api/fullname-by-name?", {
+    var response = await await fetch("/api/fullname-by-name", {
         method: 'POST',
         headers: {
             "Content-Type": "application/json",
@@ -7,7 +7,6 @@ async function getFullName(name) {
         body: JSON.stringify({ name: name }),
     }).then(data => data.json());
     if (response.status != 'error') {
-        console.log(response)
         return response[0].fullname;
     } else {
         console.error(response.error)
@@ -39,7 +38,6 @@ window.onload = () => {
             for (var contact in dt) {
                 addContact(dt[contact]);
             }
-            console.log(dt);
         });
     var socket = io();
 };
