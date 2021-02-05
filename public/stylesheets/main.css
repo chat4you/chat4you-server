@@ -1,3 +1,6 @@
+/* Load some fonts */
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans&display=swap');
+
 @media (prefers-color-scheme: dark) {
     :root {
         --background: black;
@@ -10,7 +13,7 @@
 @media (prefers-color-scheme: light) {
     :root {
         --background: white;
-        --shadow-color: darkkhaki;
+        --shadow-color: rgba(189, 183, 107, 0.568);
         --main-color: blue;
         --forderground-color: lightblue;
     }
@@ -21,6 +24,7 @@
     padding: 0px;
     color: var(--main-color);
     background-color: transparent;
+    font-family: 'Open Sans', sans-serif;
 }
 
 *:focus {

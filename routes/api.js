@@ -1,7 +1,6 @@
 var express = require("express");
 var router = express.Router();
-const crypto = require("crypto");
-const config = require("../config");
+const utils = require("../utils");
 
 module.exports = (db, io, auths) => {
     router.use((req, res, next) => {
@@ -18,36 +17,27 @@ module.exports = (db, io, auths) => {
 
     // Login api
     router.post("/login", (req, res) => {
-        auths.login(
-            req.body.username,
-            req.body.password,
-            (result) => {
-                if (result.status == "wrongpass") {
-                    console.log(
-                        `User ${req.body.username} tried to login with password ${req.body.password}.`
-                    );
-                } else {
-                    req.session.login = true;
-                    req.session.name = req.body.username;
-                    req.session.fullname = result.userData.fullname;
-                    req.cookies.Auth = result.cookieAuth;
-                    req.cookies.Verify = result.cookieVerify;
-                    console.log(
-                        `User ${req.body.username} logged in succesfully.`
-                    );
-                    res.json({ login: true });
-                }
+        auths.login(req.body.username, req.body.password, (result) => {
+            if (result.status == "wrongpass") {
+                console.log(
+                    `User ${req.body.username} tried to login with password ${req.body.password}.`
+                );
+            } else {
+                req.session.login = true;
+                req.session.name = req.body.username;
+                req.session.fullname = result.userData.fullname;
+                res.cookie("Auth", result.cookieAuth);
+                res.cookie("Verify", result.cookieVerify);
+                console.log(`User ${req.body.username} logged in succesfully.`);
+                res.json({ login: true });
             }
-        );
+        });
     });
 
     router.get("/logout", (req, res) => {
         delete req.session.login;
-        auths.logout(
-            req.cookies.Auth,
-            req.cookies.Verify,
-            (status) => {}
-        );
+        console.log(req.cookies.Verify, req.cookies.Auth);
+        auths.logout(req.cookies.Auth, req.cookies.Verify, (status) => {});
         res.redirect("/");
     });
 
@@ -101,7 +91,21 @@ module.exports = (db, io, auths) => {
     });
 
     io.on("connection", (socket) => {
-        socket.on("auth", async (data) => {});
+        socket.on("auth", (data) => {
+            var cookie = utils.cookieParser(data);
+            if (auths.verify(cookie.Auth, cookie.Verify)) {
+                auths.loginsByCookie[cookie.Auth].socket = socket;
+                socket.name = auths.loginsByCookie[cookie.Auth].userData.name;
+                socket.authenticated = true;
+                socket.emit("auth", { status: "sucess" });
+                console.log('Socket Authenticated')
+            } else {
+                socket.emit("auth", { status: "verifyFail" });
+            }
+        });
+        socket.on("disconnect", () => {
+            console.log("Socket disconnected");
+        });
         console.log("New unauthenticated socket");
     });
 

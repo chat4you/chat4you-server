@@ -138,10 +138,29 @@ h1 {
 }
 
 .contact {
-    flex: 0 1 4em;
-    text-align: center;
+    display: flex;
+    cursor: pointer;
+    flex: 0 1 50px;
+    padding: 5px;
+    transition: all 0.2s ease-in-out;
+}
+
+.contact-profile {
+    flex: 0 1 auto;
+    height: 50px;
+    width: 50px;
+    border-radius: 25px;
+    box-shadow: 0 0 5px var(--shadow-color) inset;
+    overflow: hidden;
+}
+
+.contact-info {
+    user-select: none;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
     justify-content: center;
-    transition: all .2s ease-in-out;
+    align-items: center;
 }
 
 .contact:hover {

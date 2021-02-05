@@ -53,11 +53,18 @@ class Authmanager {
         });
     }
     logout(cookieAuth, cookieVerify, callback) {
-        if (hash(cookieAuth) == cookieVerify) {
+        if (this.verify(cookieAuth, cookieVerify)) {
             delete this.loginsByCookie[cookieAuth];
             callback({ status: "sucess" });
         } else {
             callback({ status: "error", error: "Verify failed" });
+        }
+    }
+    verify(cookieAuth, cookieVerify) {
+        if (hash(cookieAuth, this.salt) == cookieVerify) {
+            return true;
+        } else {
+            return false;
         }
     }
 }
