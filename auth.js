@@ -52,6 +52,7 @@ class Authmanager {
             }
         });
     }
+
     logout(cookieAuth, cookieVerify, callback) {
         if (this.verify(cookieAuth, cookieVerify)) {
             delete this.loginsByCookie[cookieAuth];
@@ -60,12 +61,38 @@ class Authmanager {
             callback({ status: "error", error: "Verify failed" });
         }
     }
+
     verify(cookieAuth, cookieVerify) {
         if (hash(cookieAuth, this.salt) == cookieVerify) {
             return true;
         } else {
             return false;
         }
+    }
+
+    userInConversation(name, convId) {
+        var query = `SELECT * FROM conversations WHERE id = '${convId}' AND ${name} = ANY(members)`;
+        this.db.query(query, (err, res) => {
+            if (err) {
+                console.error(err);
+                return false;
+            } else if (res.rows[0]) {
+                return true;
+            } else {
+                return false;
+            }
+        });
+    }
+
+    getMessages(convId, startTime) {
+        var query = `SELECT * FROM messages WHERE conversation = ${convId} AND sent < ${startTime} LIMIT 100`;
+        this.db.query(query, (err, res) => {
+            if (err) {
+                console.error(err);
+            } else {
+                return res.rows;
+            }
+        })
     }
 }
 

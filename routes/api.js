@@ -103,6 +103,15 @@ module.exports = (db, io, auths) => {
                 socket.emit("auth", { status: "verifyFail" });
             }
         });
+
+        socket.on('getMessages', (data) => {
+            if (auths.userInConversation(socket.name, data.id)) {
+                
+            } else {
+                socket.emit('getMessages', {status: 'authFailed'});
+            };
+        })
+
         socket.on("disconnect", () => {
             console.log("Socket disconnected");
         });

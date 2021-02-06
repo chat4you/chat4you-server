@@ -6,7 +6,7 @@
         --background: black;
         --shadow-color: green;
         --main-color: green;
-        --forderground-color: rgba(0, 128, 0, 0.3);
+        --forderground-color: rgb(44, 44, 44);
     }
 }
 

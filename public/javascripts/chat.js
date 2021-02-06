@@ -1,4 +1,25 @@
-var socketReady;
+var socketReady, socket;
+var contacts = {};
+async function openChat(id, name) {
+    var contact = contacts[id];
+    document.querySelector("#chat-name").innerHTML = name;
+    if (!contact.open) {
+        var previousChat = document.querySelector(".open-chat");
+        if (previousChat) {
+            previousChat.classList.remove("open-chat");
+            previousChat.classList.add("closed-chat");
+        }
+        var chatContent;
+        if (!contact.opendBefore) {
+            chatContent = document.createElement("div");
+            document.querySelector(".messages-parent").appendChild(chatContent);
+        } else {
+            chatContent = contact.msgDiv;
+        }
+        chatContent.classList.add("open-chat");
+    }
+}
+
 async function getFullName(name) {
     var response = await await fetch("/api/fullname-by-name", {
         method: "POST",
@@ -22,8 +43,9 @@ async function addContact(contactInfo) {
     var profile = document.createElement("div");
     var profileImage = document.createElement("img");
     title.contactId = contactInfo.id;
+    var other;
     if (contactInfo.type == "chat") {
-        let other =
+        other =
             contactInfo.members[0] == me
                 ? contactInfo.members[1]
                 : contactInfo.members[0];
@@ -40,6 +62,9 @@ async function addContact(contactInfo) {
     container.appendChild(info);
     container.classList.add("contact");
     document.querySelector(".contact-list").appendChild(container);
+    container.addEventListener("click", () => {
+        openChat(contactInfo.id, title.innerHTML);
+    });
 }
 
 window.onload = () => {
@@ -48,15 +73,16 @@ window.onload = () => {
         .then((dt) => {
             for (var contact in dt) {
                 addContact(dt[contact]);
+                contacts[dt[contact].id] = dt[contact];
             }
         });
-    var socket = io();
+    socket = io();
     socket.on("auth", (res) => {
-        if (res.status == 'sucess') {
+        if (res.status == "sucess") {
             socketReady = true;
         } else {
             socketReady = false;
-            alert('Cookie verification failed')
+            alert("Cookie verification failed");
         }
     });
     socket.emit("auth", document.cookie);

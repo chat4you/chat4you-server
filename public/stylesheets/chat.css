@@ -13,7 +13,6 @@ button {
     border-radius: 0px;
     padding: 5px;
     transition: all 0.1s;
-    box-shadow: 2px 2px 4px var(--shadow-color);
 }
 
 button:hover {
@@ -165,4 +164,14 @@ h1 {
 
 .contact:hover {
     background-color: var(--forderground-color);
+}
+
+.open-chat {
+    height: 100%;
+    width: 100%;
+}
+
+.closed-chat {
+    display: none;
+    visibility: hidden;
 }
