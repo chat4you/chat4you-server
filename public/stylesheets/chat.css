@@ -74,9 +74,42 @@ h1 {
     flex: 1 1 auto;
 }
 
+.chat {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 5px;
+    box-sizing: border-box;
+    overflow-y: scroll;
+}
+
 .message-input {
     flex: 0 1 3em;
     display: flex;
+}
+
+.message-line {
+    flex: 0 1 1.5em;
+    display: flex;
+    margin-top: 5px;
+}
+
+.message-line.me {
+    justify-content: flex-end;
+}
+
+.message-line.other {
+    justify-content: flex-start;
+}
+
+.message {
+    max-width: 30%;
+    word-wrap: break-word;
+    padding: 3px;
+    border-radius: 3px;
+    background-color: var(--forderground-color);
+    animation: fadeIn 0.2s linear;
+    animation-fill-mode: forwards;
 }
 
 #send {
@@ -174,4 +207,15 @@ h1 {
 .closed-chat {
     display: none;
     visibility: hidden;
+}
+
+@keyframes fadeIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0px);
+        opacity: 1;
+    }
 }

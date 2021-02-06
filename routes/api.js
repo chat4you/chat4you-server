@@ -36,7 +36,6 @@ module.exports = (db, io, auths) => {
 
     router.get("/logout", (req, res) => {
         delete req.session.login;
-        console.log(req.cookies.Verify, req.cookies.Auth);
         auths.logout(req.cookies.Auth, req.cookies.Verify, (status) => {});
         res.redirect("/");
     });
@@ -97,20 +96,30 @@ module.exports = (db, io, auths) => {
                 auths.loginsByCookie[cookie.Auth].socket = socket;
                 socket.name = auths.loginsByCookie[cookie.Auth].userData.name;
                 socket.authenticated = true;
-                socket.emit("auth", { status: "sucess" });
-                console.log('Socket Authenticated')
+                socket.emit("auth", {
+                    status: "sucess",
+                    data: auths.loginsByCookie[cookie.Auth].userData,
+                });
+                console.log("Socket Authenticated");
             } else {
                 socket.emit("auth", { status: "verifyFail" });
             }
         });
 
-        socket.on('getMessages', (data) => {
-            if (auths.userInConversation(socket.name, data.id)) {
-                
+        socket.on("getMessages", async (data) => {
+            if (await auths.userInConversation(socket.name, data.id)) {
+                var messages = await auths.getMessages(
+                    data.id,
+                    new Date().toDateString()
+                );
+                socket.emit("getMessages", {
+                    status: "sucess",
+                    rows: messages.rows,
+                });
             } else {
-                socket.emit('getMessages', {status: 'authFailed'});
-            };
-        })
+                socket.emit("getMessages", { status: "authFailed" });
+            }
+        });
 
         socket.on("disconnect", () => {
             console.log("Socket disconnected");

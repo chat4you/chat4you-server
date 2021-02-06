@@ -1,5 +1,5 @@
-var socketReady, socket;
-var contacts = {};
+var contacts, socketReady, socket, loadMessages, me;
+contacts = {};
 async function openChat(id, name) {
     var contact = contacts[id];
     document.querySelector("#chat-name").innerHTML = name;
@@ -12,9 +12,14 @@ async function openChat(id, name) {
         var chatContent;
         if (!contact.opendBefore) {
             chatContent = document.createElement("div");
+            chatContent.classList.add('chat');
             document.querySelector(".messages-parent").appendChild(chatContent);
+            contact.opendBefore = true;
+            contact.msgDiv = chatContent;
+            loadMessages(contact.id);
         } else {
             chatContent = contact.msgDiv;
+            chatContent.classList.remove("closed-chat");
         }
         chatContent.classList.add("open-chat");
     }
@@ -46,7 +51,7 @@ async function addContact(contactInfo) {
     var other;
     if (contactInfo.type == "chat") {
         other =
-            contactInfo.members[0] == me
+            contactInfo.members[0] == me.name
                 ? contactInfo.members[1]
                 : contactInfo.members[0];
         title.innerHTML = await getFullName(other);
@@ -67,23 +72,67 @@ async function addContact(contactInfo) {
     });
 }
 
-window.onload = () => {
-    fetch("/api/contact")
-        .then((data) => data.json())
-        .then((dt) => {
-            for (var contact in dt) {
-                addContact(dt[contact]);
-                contacts[dt[contact].id] = dt[contact];
+async function addMessage(msg, id) {
+    var messageLine = document.createElement("div");
+    var messageContent,
+        messageContiner = document.createElement("div");
+    switch (msg.type) {
+        case "text": {
+            messageContent = document.createElement("div");
+            messageContent.innerHTML = msg.content;
+            break;
+        }
+        default: {
+            console.log(`${msg.type} not supported`);
+            break;
+        }
+    }
+    messageLine.classList.add("message-line");
+    msg.sent_by == me.id
+        ? messageLine.classList.add("me")
+        : messageLine.classList.add("other");
+    messageContiner.classList.add("message");
+    messageContiner.appendChild(messageContent);
+    messageLine.appendChild(messageContiner);
+    contacts[id].msgDiv.appendChild(messageLine);
+}
+
+socket = io();
+socket.on("auth", (res) => {
+    if (res.status == "sucess") {
+        socketReady = true;
+        me = res.data;
+        fetch("/api/contact")
+            .then((data) => data.json())
+            .then((dt) => {
+                for (var contact in dt) {
+                    addContact(dt[contact]);
+                    contacts[dt[contact].id] = dt[contact];
+                }
+            });
+    } else {
+        socketReady = false;
+        alert("Cookie verification failed!");
+        document.cookie = "";
+        document.location.href = "/";
+    }
+});
+socket.on("reconnect", () => {
+    socket.emit("auth", document.cookie);
+});
+socket.emit("auth", document.cookie);
+loadMessages = async (id) => {
+    var messages = await new Promise((done) => {
+        socket.on("getMessages", (data) => {
+            if (data.status == "sucess") {
+                done(data.rows);
+            } else {
+                alert("Error getting messages");
             }
         });
-    socket = io();
-    socket.on("auth", (res) => {
-        if (res.status == "sucess") {
-            socketReady = true;
-        } else {
-            socketReady = false;
-            alert("Cookie verification failed");
-        }
+        socket.emit("getMessages", { id: id });
     });
-    socket.emit("auth", document.cookie);
+    messages.forEach((msg, idx) => {
+        addMessage(msg, id);
+    });
 };

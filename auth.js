@@ -26,9 +26,11 @@ class Authmanager {
             } else if (res.rows[0]) {
                 var randomString = radnStr(50);
                 var hashOfString = hash(randomString, this.salt);
+                var user = res.rows[0];
+                delete user.password_hash; // Delte sensitive information
                 this.loginsByCookie[randomString] = {
                     username: username,
-                    userData: res.rows[0],
+                    userData: user,
                 };
                 if (res.rows[0].verified) {
                     callback({
@@ -70,29 +72,34 @@ class Authmanager {
         }
     }
 
-    userInConversation(name, convId) {
-        var query = `SELECT * FROM conversations WHERE id = '${convId}' AND ${name} = ANY(members)`;
-        this.db.query(query, (err, res) => {
-            if (err) {
-                console.error(err);
-                return false;
-            } else if (res.rows[0]) {
-                return true;
-            } else {
-                return false;
-            }
+    async userInConversation(name, convId) {
+        var query = `SELECT * FROM conversations WHERE id = '${convId}' AND '${name}' = ANY(members)`;
+        return await new Promise((done) => {
+            this.db.query(query, (err, res) => {
+                if (err) {
+                    console.error(err);
+                    done(false)
+                } else if (res.rows[0]) {
+                    done(true)
+                } else {
+                    done(false);
+                }
+            });
         });
     }
 
-    getMessages(convId, startTime) {
-        var query = `SELECT * FROM messages WHERE conversation = ${convId} AND sent < ${startTime} LIMIT 100`;
-        this.db.query(query, (err, res) => {
-            if (err) {
-                console.error(err);
-            } else {
-                return res.rows;
-            }
-        })
+    async getMessages(convId, startTime) {
+        var query = `SELECT * FROM messages WHERE conversation = '${convId}' AND sent <= '${startTime}'`;
+        return await new Promise((done) => {
+            this.db.query(query, (err, res) => {
+                if (err) {
+                    console.error(err);
+                    done({ status: "error" });
+                } else {
+                    done({ status: "sucess", rows: res.rows });
+                }
+            });
+        });
     }
 }
 

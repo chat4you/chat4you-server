@@ -30,7 +30,7 @@ input.login-input::placeholder {
 .login-item {
     border: none;
     padding: 5px;
-    margin: 5px;
+    margin-top: 5px;;
     width: 100%;
     border-radius: 5px;
 }
