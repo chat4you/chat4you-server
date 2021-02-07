@@ -1,19 +1,28 @@
-var contacts, socketReady, socket, loadMessages, me;
+var contacts,
+    socketReady,
+    socket,
+    loadMessages,
+    me,
+    currentChatId,
+    messageInput,
+    sendBtn;
 contacts = {};
-async function openChat(id, name) {
+async function openChat(id, hidden = false) {
     var contact = contacts[id];
-    document.querySelector("#chat-name").innerHTML = name;
+    document.querySelector("#chat-name").innerHTML = contact.name;
     if (!contact.open) {
         var previousChat = document.querySelector(".open-chat");
-        if (previousChat) {
+        if (previousChat && !hidden) {
             previousChat.classList.remove("open-chat");
             previousChat.classList.add("closed-chat");
         }
         var chatContent;
         if (!contact.opendBefore) {
             chatContent = document.createElement("div");
-            chatContent.classList.add('chat');
-            document.querySelector(".messages-parent").appendChild(chatContent);
+            chatContent.classList.add("chat");
+            document
+                .querySelector(".message-container")
+                .appendChild(chatContent);
             contact.opendBefore = true;
             contact.msgDiv = chatContent;
             loadMessages(contact.id);
@@ -21,8 +30,12 @@ async function openChat(id, name) {
             chatContent = contact.msgDiv;
             chatContent.classList.remove("closed-chat");
         }
-        chatContent.classList.add("open-chat");
+        if (!hidden) {
+            currentChatId = id;
+            chatContent.classList.add("open-chat");
+        }
     }
+    return;
 }
 
 async function getFullName(name) {
@@ -47,7 +60,6 @@ async function addContact(contactInfo) {
     var subTitle = document.createElement("h6");
     var profile = document.createElement("div");
     var profileImage = document.createElement("img");
-    title.contactId = contactInfo.id;
     var other;
     if (contactInfo.type == "chat") {
         other =
@@ -56,6 +68,7 @@ async function addContact(contactInfo) {
                 : contactInfo.members[0];
         title.innerHTML = await getFullName(other);
         subTitle.innerHTML = other;
+        contacts[contactInfo.id].name = title.innerHTML;
     } else {
         title.innerHTML = contactInfo.name;
     }
@@ -68,17 +81,17 @@ async function addContact(contactInfo) {
     container.classList.add("contact");
     document.querySelector(".contact-list").appendChild(container);
     container.addEventListener("click", () => {
-        openChat(contactInfo.id, title.innerHTML);
+        openChat(contactInfo.id);
     });
 }
 
-async function addMessage(msg, id) {
+async function addMessage(msg) {
     var messageLine = document.createElement("div");
     var messageContent,
         messageContiner = document.createElement("div");
     switch (msg.type) {
         case "text": {
-            messageContent = document.createElement("div");
+            messageContent = document.createElement("p");
             messageContent.innerHTML = msg.content;
             break;
         }
@@ -94,9 +107,14 @@ async function addMessage(msg, id) {
     messageContiner.classList.add("message");
     messageContiner.appendChild(messageContent);
     messageLine.appendChild(messageContiner);
-    contacts[id].msgDiv.appendChild(messageLine);
+    if (!contacts[msg.conversation].msgDiv) {
+        await openChat(msg.conversation, (hidden = true));
+    }
+    let messageDiv = contacts[msg.conversation].msgDiv;
+    messageDiv.appendChild(messageLine);
+    messageDiv.scrollTop = messageDiv.scrollHeight;
 }
-
+// Setup the socket
 socket = io();
 socket.on("auth", (res) => {
     if (res.status == "sucess") {
@@ -117,8 +135,8 @@ socket.on("auth", (res) => {
         document.location.href = "/";
     }
 });
-socket.on("reconnect", () => {
-    socket.emit("auth", document.cookie);
+socket.on("message", (message) => {
+    addMessage(message);
 });
 socket.emit("auth", document.cookie);
 loadMessages = async (id) => {
@@ -136,3 +154,22 @@ loadMessages = async (id) => {
         addMessage(msg, id);
     });
 };
+
+messageInput = document.querySelector("#input-message");
+sendBtn = document.querySelector("#send");
+sendBtn.addEventListener("click", () => {
+    let message = {
+        conversation: currentChatId,
+        content: messageInput.value,
+        type: "text",
+        sent_by: me.id,
+    };
+    messageInput.value = "";
+    socket.emit("message", message);
+});
+messageInput.addEventListener("keydown", (e) => {
+    if (e.key == "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendBtn.click();
+    }
+});

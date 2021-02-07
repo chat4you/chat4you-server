@@ -100,28 +100,61 @@ module.exports = (db, io, auths) => {
                     status: "sucess",
                     data: auths.loginsByCookie[cookie.Auth].userData,
                 });
+                auths.setStatus(socket.name, "online");
                 console.log("Socket Authenticated");
             } else {
                 socket.emit("auth", { status: "verifyFail" });
             }
-        });
+            socket.on("getMessages", async (data) => {
+                if (await auths.userInConversation(socket.name, data.id)) {
+                    var messages = await auths.getMessages(
+                        data.id,
+                        new Date().toDateString()
+                    );
+                    socket.emit("getMessages", {
+                        status: "sucess",
+                        rows: messages.result,
+                    });
+                } else {
+                    socket.emit("getMessages", { status: "authFailed" });
+                }
+            });
 
-        socket.on("getMessages", async (data) => {
-            if (await auths.userInConversation(socket.name, data.id)) {
-                var messages = await auths.getMessages(
-                    data.id,
-                    new Date().toDateString()
-                );
-                socket.emit("getMessages", {
-                    status: "sucess",
-                    rows: messages.rows,
-                });
-            } else {
-                socket.emit("getMessages", { status: "authFailed" });
-            }
+            socket.on("message", async (data) => {
+                if (
+                    await auths.userInConversation(
+                        socket.name,
+                        data.conversation
+                    )
+                ) {
+                    await auths.addMessage(data);
+                    var result = (
+                        await auths.getConversation(data.conversation)
+                    ).result[0];
+                    for (var i in result.members) {
+                        if (
+                            result.accepted[i] &&
+                            (await auths.getStatus(result.members[i])) ==
+                                "online"
+                        ) {
+                            for (var ii in auths.cookiesByName[
+                                result.members[i]
+                            ]) {
+                                let otherSocket =
+                                    auths.loginsByCookie[
+                                        auths.cookiesByName[result.members[i]][
+                                            ii
+                                        ]
+                                    ].socket;
+                                otherSocket.emit("message", data);
+                            }
+                        }
+                    }
+                }
+            });
         });
-
         socket.on("disconnect", () => {
+            auths.setStatus(socket.name, "offline");
             console.log("Socket disconnected");
         });
         console.log("New unauthenticated socket");

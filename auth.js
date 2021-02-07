@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const { resolve } = require("path");
 
 function hash(text, salt) {
     var hash = crypto.createHmac("md5", salt);
@@ -14,6 +15,20 @@ class Authmanager {
         this.salt = salt;
         this.db = db;
         this.loginsByCookie = {};
+        this.cookiesByName = {};
+    }
+
+    query(query) {
+        return new Promise((resolve) => {
+            this.db.query(query, (err, res) => {
+                if (err) {
+                    console.error(query);
+                    throw err;
+                } else {
+                    resolve({ status: "sucess", result: res.rows });
+                }
+            });
+        });
     }
 
     login(username, password, callback) {
@@ -27,11 +42,15 @@ class Authmanager {
                 var randomString = radnStr(50);
                 var hashOfString = hash(randomString, this.salt);
                 var user = res.rows[0];
-                delete user.password_hash; // Delte sensitive information
+                delete user.password_hash; // Hide sensitive information
                 this.loginsByCookie[randomString] = {
                     username: username,
                     userData: user,
                 };
+                if (!this.cookiesByName[username]) {
+                    this.cookiesByName[username] = []; // User might have multiple sessions
+                }
+                this.cookiesByName[username].push(randomString);
                 if (res.rows[0].verified) {
                     callback({
                         status: "sucess",
@@ -74,32 +93,40 @@ class Authmanager {
 
     async userInConversation(name, convId) {
         var query = `SELECT * FROM conversations WHERE id = '${convId}' AND '${name}' = ANY(members)`;
-        return await new Promise((done) => {
-            this.db.query(query, (err, res) => {
-                if (err) {
-                    console.error(err);
-                    done(false)
-                } else if (res.rows[0]) {
-                    done(true)
-                } else {
-                    done(false);
-                }
-            });
-        });
+        var result = await this.query(query);
+        if (result.status == "sucess" && result.result[0]) {
+            return true;
+        }
+        return false;
     }
 
     async getMessages(convId, startTime) {
-        var query = `SELECT * FROM messages WHERE conversation = '${convId}' AND sent <= '${startTime}'`;
-        return await new Promise((done) => {
-            this.db.query(query, (err, res) => {
-                if (err) {
-                    console.error(err);
-                    done({ status: "error" });
-                } else {
-                    done({ status: "sucess", rows: res.rows });
-                }
-            });
-        });
+        var query = `SELECT * FROM messages WHERE conversation = '${convId}' AND sent <= '${startTime}' ORDER BY sent ASC`;
+        return await this.query(query);
+    }
+
+    async setStatus(name, status) {
+        var query = `UPDATE users SET status='${status}' WHERE name='${name}'`;
+        return await this.query(query);
+    }
+
+    async getStatus(name) {
+        var query = `SELECT status FROM users WHERE name='${name}'`;
+        return (await this.query(query)).result[0].status;
+    }
+
+    async addMessage(msg) {
+        var query = `INSERT INTO messages VALUES ('${
+            msg.conversation
+        }', '${new Date().toISOString()}', '${msg.type}', '${msg.content}', '${
+            msg.sent_by
+        }')`;
+        return await this.query(query);
+    }
+
+    async getConversation(id) {
+        var query = `SELECT * FROM conversations WHERE id = '${id}'`;
+        return await this.query(query);
     }
 }
 

@@ -1,9 +1,3 @@
-html,
-body {
-    height: 100%;
-    background-color: var(--background);
-}
-
 body {
     display: flex;
 }
@@ -25,7 +19,8 @@ button:active {
 }
 
 input,
-textarea {
+textarea,
+#input-message {
     border: 1px solid var(--main-color);
     border-radius: 0px;
     padding: 5px;
@@ -37,14 +32,14 @@ h1 {
 }
 
 .messages {
-    flex: 1 0 auto;
+    flex: 1 1 auto;
     display: flex;
     flex-direction: column;
 }
 
 .navigation {
     border-left: 1px solid var(--main-color);
-    flex: 0 1 30%;
+    flex: 0 0 30%;
     display: flex;
     flex-direction: column;
 }
@@ -58,29 +53,28 @@ h1 {
 }
 
 .message-container {
-    flex: 1 1 auto;
+    flex: 1;
+    box-sizing: border-box;
+    padding: 5px;
+    overflow-y: auto;
     display: flex;
-    flex-direction: column;
 }
 
 .messages-header {
     flex: 0 1 1em;
     display: flex;
-    align-items: center;
     border-bottom: 1px solid var(--main-color);
 }
 
-.messages-parent {
-    flex: 1 1 auto;
+.chat {
+    flex: 1 0;
+    display: flex;
+    min-height: min-content;
+    flex-direction: column;
 }
 
-.chat {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    padding: 5px;
-    box-sizing: border-box;
-    overflow-y: scroll;
+.chat > :first-child {
+    margin-top: auto;
 }
 
 .message-input {
@@ -89,7 +83,8 @@ h1 {
 }
 
 .message-line {
-    flex: 0 1 1.5em;
+    width: 100%;
+    flex: 0 0 1.5em;
     display: flex;
     margin-top: 5px;
 }
@@ -102,10 +97,21 @@ h1 {
     justify-content: flex-start;
 }
 
+.message-line.me .message {
+    border-right: 5px solid var(--main-color);
+    padding-right: 5px;
+}
+
+.message-line.other .message {
+    border-left: 5px solid var(--main-color);
+    padding-left: 5px;
+}
+
 .message {
-    max-width: 30%;
+    max-width: 70%;
     word-wrap: break-word;
     padding: 3px;
+    box-sizing: border-box;
     border-radius: 3px;
     background-color: var(--forderground-color);
     animation: fadeIn 0.2s linear;
@@ -117,7 +123,8 @@ h1 {
 }
 
 #input-message {
-    flex: 1 0 auto;
+    flex: 1 1 auto;
+    overflow-y: scroll;
 }
 
 /* The add contact button */
@@ -211,11 +218,11 @@ h1 {
 
 @keyframes fadeIn {
     from {
-        transform: translateY(-20px);
+        transform: translatex(-20px) translateY(-20px);
         opacity: 0;
     }
     to {
-        transform: translateX(0px);
+        transform: translatex(0px) translateY(0px);
         opacity: 1;
     }
 }
