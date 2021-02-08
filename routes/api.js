@@ -89,75 +89,74 @@ module.exports = (db, io, auths) => {
         }
     });
 
-    io.on("connection", (socket) => {
-        socket.on("auth", (data) => {
-            var cookie = utils.cookieParser(data);
-            if (auths.verify(cookie.Auth, cookie.Verify)) {
-                auths.loginsByCookie[cookie.Auth].socket = socket;
-                socket.name = auths.loginsByCookie[cookie.Auth].userData.name;
-                socket.authenticated = true;
-                socket.emit("auth", {
-                    status: "sucess",
-                    data: auths.loginsByCookie[cookie.Auth].userData,
-                });
-                auths.setStatus(socket.name, "online");
-                console.log("Socket Authenticated");
-            } else {
-                socket.emit("auth", { status: "verifyFail" });
-            }
-            socket.on("getMessages", async (data) => {
-                if (await auths.userInConversation(socket.name, data.id)) {
-                    var messages = await auths.getMessages(
-                        data.id,
-                        new Date().toDateString()
-                    );
-                    socket.emit("getMessages", {
+    io.on("connection", async (socket) => {
+        await new Promise((resolve) => {
+            socket.on("auth", (data) => {
+                var cookie = utils.cookieParser(data);
+                if (auths.verify(cookie.Auth, cookie.Verify)) {
+                    socket.cookieAuth = cookie.Auth; // Save cookie for later
+                    auths.loginsByCookie[cookie.Auth].socket = socket;
+                    let userData =
+                        auths.loginsByCookie[cookie.Auth].userData;
+                    socket.name = userData.name;
+                    socket.authenticated = true;
+                    socket.emit("auth", {
                         status: "sucess",
-                        rows: messages.result,
+                        data: userData,
                     });
+                    auths.setStatus(socket.name, "online"); // Chatter is now online
+                    resolve(); // Continue to nex step
                 } else {
-                    socket.emit("getMessages", { status: "authFailed" });
+                    socket.emit("auth", { status: "verifyFail" });
                 }
             });
+        });
+        console.log("Socket authenticated")
+        // If authentication is not succesfull this will never be run
+        socket.on("getMessages", async (data) => {
+            if (await auths.userInConversation(socket.name, data.id)) {
+                var messages = await auths.getMessages(
+                    data.id,
+                    new Date().toDateString()
+                );
+                socket.emit("getMessages", {
+                    status: "sucess",
+                    rows: messages.result,
+                });
+            } else {
+                socket.emit("getMessages", { status: "authFailed" });
+                console.log("Socket auth failed")
+            }
+        });
 
-            socket.on("message", async (data) => {
-                if (
-                    await auths.userInConversation(
-                        socket.name,
-                        data.conversation
-                    )
-                ) {
-                    await auths.addMessage(data);
-                    var result = (
-                        await auths.getConversation(data.conversation)
-                    ).result[0];
-                    for (var i in result.members) {
-                        if (
-                            result.accepted[i] &&
-                            (await auths.getStatus(result.members[i])) ==
-                                "online"
-                        ) {
-                            for (var ii in auths.cookiesByName[
-                                result.members[i]
-                            ]) {
-                                let otherSocket =
-                                    auths.loginsByCookie[
-                                        auths.cookiesByName[result.members[i]][
-                                            ii
-                                        ]
-                                    ].socket;
-                                otherSocket.emit("message", data);
-                            }
+        socket.on("message", async (data) => {
+            if (
+                await auths.userInConversation(socket.name, data.conversation)
+            ) {
+                await auths.addMessage(data);
+                var result = (await auths.getConversation(data.conversation))
+                    .result[0];
+                for (var i in result.members) {
+                    if (
+                        result.accepted[i] &&
+                        (await auths.getStatus(result.members[i])) == "online"
+                    ) {
+                        for (var ii in auths.cookiesByName[result.members[i]]) {
+                            let otherSocket =
+                                auths.loginsByCookie[
+                                    auths.cookiesByName[result.members[i]][ii]
+                                ].socket;
+                            otherSocket.emit("message", data);
                         }
                     }
                 }
-            });
+            }
         });
         socket.on("disconnect", () => {
+            delete auths.loginsByCookie[socket.cookieAuth].socket;
             auths.setStatus(socket.name, "offline");
             console.log("Socket disconnected");
         });
-        console.log("New unauthenticated socket");
     });
 
     return router;
