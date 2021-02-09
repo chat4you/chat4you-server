@@ -120,6 +120,7 @@ module.exports = (db, io, auths) => {
                 );
                 socket.emit("getMessages", {
                     status: "sucess",
+                    id: data.id,
                     rows: messages.result,
                 });
             } else {

@@ -129,7 +129,7 @@ h1 {
 
 /* The add contact button */
 
-.add-contact {
+.add-contact-activate {
     flex: 0 1 70px;
     display: flex;
     padding: 10px;
@@ -138,7 +138,7 @@ h1 {
     border-bottom: 1px solid var(--main-color);
 }
 
-.add-contact h2 {
+.add-contact-activate h2 {
     margin-left: 10px;
 }
 
@@ -168,6 +168,22 @@ h1 {
 
 .add-contact-1 {
     transform: rotate(90deg);
+}
+
+.add-contact {
+    display: none;
+    justify-content: stretch;
+    flex: 0 0 1em;
+    overflow: visible;
+    border-bottom: 1px solid var(--main-color);
+}
+
+.add-contact.visible {
+    display: flex;
+}
+
+#add-contact-input {
+    flex: 1 0;
 }
 
 .contact-list {
