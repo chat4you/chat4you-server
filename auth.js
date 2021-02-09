@@ -1,5 +1,5 @@
 const crypto = require("crypto");
-const { resolve } = require("path");
+const { sanitize } = require("./utils");
 
 function hash(text, salt) {
     var hash = crypto.createHmac("md5", salt);
@@ -32,6 +32,8 @@ class Authmanager {
     }
 
     login(username, password, callback) {
+        // some anti xss
+        username = sanitize(username);
         var passhash = hash(password, this.salt);
         var query = `SELECT * FROM users WHERE password_hash='${passhash}' AND name='${username}'`;
         this.db.query(query, (err, res) => {
@@ -92,7 +94,9 @@ class Authmanager {
     }
 
     async userInConversation(name, convId) {
-        var query = `SELECT * FROM conversations WHERE id = '${convId}' AND '${name}' = ANY(members)`;
+        var query = `SELECT * FROM conversations WHERE id = '${parseInt(
+            convId
+        )}' AND '${sanitize(name)}' = ANY(members)`;
         var result = await this.query(query);
         if (result.status == "sucess" && result.result[0]) {
             return true;
@@ -101,17 +105,21 @@ class Authmanager {
     }
 
     async getMessages(convId, startTime) {
-        var query = `SELECT * FROM messages WHERE conversation = '${convId}' AND sent <= '${startTime}' ORDER BY sent ASC`;
+        var query = `SELECT * FROM messages WHERE conversation = '${parseInt(
+            convId
+        )}' AND sent <= '${startTime}' ORDER BY sent ASC`;
         return await this.query(query);
     }
 
     async setStatus(name, status) {
-        var query = `UPDATE users SET status='${status}' WHERE name='${name}'`;
+        var query = `UPDATE users SET status='${sanitize(
+            status
+        )}' WHERE name='${name}'`;
         return await this.query(query);
     }
 
     async getStatus(name) {
-        var query = `SELECT status FROM users WHERE name='${name}'`;
+        var query = `SELECT status FROM users WHERE name='${sanitize(name)}'`;
         return (await this.query(query)).result[0].status;
     }
 
@@ -125,7 +133,7 @@ class Authmanager {
     }
 
     async getConversation(id) {
-        var query = `SELECT * FROM conversations WHERE id = '${id}'`;
+        var query = `SELECT * FROM conversations WHERE id = '${parseInt(id)}'`;
         return await this.query(query);
     }
 }

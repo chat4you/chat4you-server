@@ -96,8 +96,7 @@ module.exports = (db, io, auths) => {
                 if (auths.verify(cookie.Auth, cookie.Verify)) {
                     socket.cookieAuth = cookie.Auth; // Save cookie for later
                     auths.loginsByCookie[cookie.Auth].socket = socket;
-                    let userData =
-                        auths.loginsByCookie[cookie.Auth].userData;
+                    let userData = auths.loginsByCookie[cookie.Auth].userData;
                     socket.name = userData.name;
                     socket.authenticated = true;
                     socket.emit("auth", {
@@ -111,7 +110,7 @@ module.exports = (db, io, auths) => {
                 }
             });
         });
-        console.log("Socket authenticated")
+        console.log("Socket authenticated");
         // If authentication is not succesfull this will never be run
         socket.on("getMessages", async (data) => {
             if (await auths.userInConversation(socket.name, data.id)) {
@@ -125,7 +124,7 @@ module.exports = (db, io, auths) => {
                 });
             } else {
                 socket.emit("getMessages", { status: "authFailed" });
-                console.log("Socket auth failed")
+                console.log("Socket auth failed");
             }
         });
 
@@ -133,6 +132,10 @@ module.exports = (db, io, auths) => {
             if (
                 await auths.userInConversation(socket.name, data.conversation)
             ) {
+                data.type = utils.sanitize(data.type);
+                if (data.type == "text") { // dont want to sanitize image path, etc.
+                    data.content = utils.sanitize(data.content)
+                }
                 await auths.addMessage(data);
                 var result = (await auths.getConversation(data.conversation))
                     .result[0];
