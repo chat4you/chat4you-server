@@ -31,6 +31,7 @@ html, body {
     color: var(--main-color);
     background-color: transparent;
     font-family: 'Open Sans', sans-serif;
+    box-sizing: border-box;
 }
 
 *:focus {

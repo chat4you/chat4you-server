@@ -1,47 +1,27 @@
 class Conversation {
-    constructor(contact, socket, me, hidden = false) {
+    constructor(contact, me, hidden = false) {
         this.messages = [];
-        this.socket = socket;
         this.contact = contact;
         this.me = me;
         this.chatContent = document.createElement("div");
         this.chatContent.classList.add("chat");
-        var previousChat = document.querySelector(".open-chat");
-        if (previousChat && !hidden) {
-            previousChat.classList.remove("open-chat");
-            previousChat.classList.add("closed-chat");
-            this.chatContent.classList.add("open-chat");
-        }
         document.querySelector("#chat-name").innerHTML = this.contact.name;
         document
             .querySelector(".message-container")
             .appendChild(this.chatContent); // show the chat
-        this.loadMessages();
+        if (!hidden) {
+            this.show();
+        }
     }
 
     show() {
         var previousChat = document.querySelector(".open-chat");
-        previousChat.classList.remove("open-chat");
-        previousChat.classList.add("closed-chat");
+        if (previousChat) {
+            previousChat.classList.remove("open-chat");
+            previousChat.classList.add("closed-chat");
+        }
         this.chatContent.classList.remove("closed-chat");
         this.chatContent.classList.add("open-chat");
-    }
-
-    async loadMessages() {
-        var messages = await new Promise((done) => {
-            this.socket.on("getMessages", (data) => {
-                if (data.status == "sucess" && data.id == this.contact.id) {
-                    done(data.rows);
-                } else {
-                    alert("Error getting messages");
-                }
-            });
-            this.socket.emit("getMessages", { id: this.contact.id });
-        });
-
-        messages.forEach((message) => {
-            this.addMessage(message);
-        });
     }
 
     async addMessage(msg) {
@@ -70,7 +50,7 @@ class Conversation {
         messageContiner.appendChild(messageContent);
         this.chatContent.chatContent;
         this.chatContent.appendChild(messageLine);
-        this.chatContent.scrollTop = messageDiv.scrollHeight;
+        this.chatContent.scrollTop = this.chatContent.scrollHeight;
     }
 }
 
@@ -80,6 +60,40 @@ class ContactManager {
         this.contacts = {}; // object where every key is the contactId
         this.contactContainers = document.querySelector(".contact-list");
         this.socket = socket;
+        this.initSocket();
+    }
+
+    async initSocket() {
+        await new Promise((done) => {
+            this.socket.on("contacts", (contacts) => {
+                if (contacts.status == "sucess") {
+                    contacts.result.forEach((contact) => {
+                        this.addContact(contact);
+                        done();
+                    });
+                } else {
+                    console.error("Error getting contacts");
+                }
+            });
+            this.socket.emit("contacts");
+        });
+        this.socket.on("getMessages", (data) => {
+            if (data.status == "sucess") {
+                if (!this.contacts[data.id].gotMessages) {
+                    data.rows.forEach((message) => {
+                        this.contacts[data.id].messages.addMessage(message);
+                    });
+                    this.contacts[data.id].gotMessages = true; // Don't get messages multiple times
+                }
+            }
+        });
+
+        this.socket.on("message", (message) => {
+            let conversation = this.contacts[message.conversation];
+            if (conversation.messages) {
+                conversation.messages.addMessage(message);
+            }
+        });
     }
 
     // Function to fech full name of user from the server
@@ -128,15 +142,19 @@ class ContactManager {
         container.classList.add("contact");
         this.contactContainers.appendChild(container);
         container.addEventListener("click", () => {
-            if (this.contacts[contact.id].messageDiv) {
-                this.contacts[contact.id].messageDiv.show();
+            if (this.contacts[contact.id].messages) {
+                this.contacts[contact.id].messages.show();
             } else {
-                this.contacts[contact.id].messageDiv = new Conversation(
+                document.querySelector("#send").disabled
+                    ? ((document.querySelector("#send").disabled = false),
+                      document.querySelector("#input-message").disabled = false)
+                    : NaN;
+                this.contacts[contact.id].messages = new Conversation(
                     contact,
-                    this.socket,
                     this.me,
                     false
                 );
+                this.socket.emit("getMessages", { id: contact.id }); // Load the messages
             }
             this.currentChatId = contact.id;
         });
@@ -160,21 +178,13 @@ async function Chat() {
         socket.emit("auth", document.cookie);
     });
     let contacts = new ContactManager(me, socket);
-    fetch("/api/contact")
-        .then((data) => data.json())
-        .then((dt) => {
-            for (var contact in dt) {
-                contacts.addContact(dt[contact]);
-            }
-        });
-    socket.on("message", (message) => {
-        contacts.contacts[message.conversation].messageDiv.addMessage(message);
-    });
 
     let messageInput = document.querySelector("#input-message");
     let addContactButton = document.querySelector(".add-contact-button");
     let requestContactDiv = document.querySelector(".add-contact");
+    let requestContactButton = document.querySelector("#add-contact-enter");
     let sendBtn = document.querySelector("#send");
+    let hideBackground = document.querySelector(".hide-background");
     sendBtn.addEventListener("click", () => {
         let message = {
             conversation: contacts.currentChatId,
@@ -198,6 +208,15 @@ async function Chat() {
         } else {
             requestContactDiv.classList.add("visible");
         }
+    });
+
+    hideBackground.addEventListener("click", () => {
+        addContactButton.click();
+    });
+    requestContactButton.addEventListener("click", () => {
+        // Request the user
+        // Close
+        addContactButton.click();
     });
 }
 Chat();

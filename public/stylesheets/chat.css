@@ -55,8 +55,7 @@ h1 {
 .message-container {
     flex: 1;
     box-sizing: border-box;
-    padding: 5px;
-    overflow-y: auto;
+    overflow-y: hidden;
     display: flex;
 }
 
@@ -67,10 +66,14 @@ h1 {
 }
 
 .chat {
+    height: 100%;
+    padding: 5px;
     flex: 1 0;
     display: flex;
     min-height: min-content;
+    overflow-y: auto;
     flex-direction: column;
+    box-sizing: border-box;
 }
 
 .chat > :first-child {
@@ -172,14 +175,37 @@ h1 {
 
 .add-contact {
     display: none;
-    justify-content: stretch;
-    flex: 0 0 1em;
-    overflow: visible;
-    border-bottom: 1px solid var(--main-color);
+    visibility: hidden;
+    position: absolute;
+    top: 10%;
+    right: 20%;
+    left: 20%;
+}
+
+.hide-background {
+    position: fixed;
+    top: 0px;
+    bottom: 0px;
+    left: 0px;
+    right: 0px;
+    z-index: 1;
+    background-color: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(5px);
+}
+
+.add-contact-content {
+    position: relative;
+    padding: 20px;
+    background-color: var(--background);
+    z-index: 2;
+    display: flex;
+    border: 1px solid var(--main-color);
 }
 
 .add-contact.visible {
-    display: flex;
+    display: block;
+    visibility: visible;
+    
 }
 
 #add-contact-input {
@@ -234,11 +260,11 @@ h1 {
 
 @keyframes fadeIn {
     from {
-        transform: translatex(-20px) translateY(-20px);
+        transform: translateY(-20px);
         opacity: 0;
     }
     to {
-        transform: translatex(0px) translateY(0px);
+        transform: translateY(0px);
         opacity: 1;
     }
 }

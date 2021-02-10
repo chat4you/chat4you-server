@@ -11,8 +11,8 @@ html(lang="en")
                 h1(id="chat-name") Open a chat to comunicate
             div(class="message-container")
             div(class="message-input")
-                button(id="send") Send
-                textarea(id="input-message")
+                button(id="send", disabled) Send
+                textarea(id="input-message", disabled)
         div(class="navigation")
             div(class="header")
                 h1 #{fullname}
@@ -25,8 +25,10 @@ html(lang="en")
                         span(class="add-contact-2")
                     h2 Add contact
                 div(class="add-contact")
-                    input(type="text", id="add-contact-input", placeholder="Enter the exact uername")
-                    button(id="add-contact-enter") Request
+                    div(class="add-contact-content")
+                        input(type="text", id="add-contact-input", placeholder="Enter the exact uername")
+                        button(id="add-contact-enter") Request
+                    div(class="hide-background")
                 div(class="contact-list")
         script(src="/socket.io/socket.io.js")
         script(src="/javascripts/chat.js")

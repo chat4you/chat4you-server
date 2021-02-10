@@ -104,6 +104,11 @@ class Authmanager {
         return false;
     }
 
+    async getContacts(name) {
+        var query = `SELECT * FROM conversations WHERE '${name}' = ANY (members)`;
+        return await this.query(query);
+    }
+
     async getMessages(convId, startTime) {
         var query = `SELECT * FROM messages WHERE conversation = '${parseInt(
             convId

@@ -61,17 +61,6 @@ module.exports = (db, io, auths) => {
         });
     });
 
-    router.get("/contact", (req, res) => {
-        var get_contacts = `SELECT * FROM conversations WHERE '${req.session.name}' = ANY (members)`;
-        db.query(get_contacts, (err, resp) => {
-            if (err) {
-                console.error(err);
-            } else {
-                res.json(resp.rows);
-            }
-        });
-    });
-
     router.post("/fullname-by-name", (req, res) => {
         if (req.body.name) {
             var get_by_name = `SELECT fullname FROM users WHERE name = '${req.body.name}' LIMIT 1`;
@@ -134,8 +123,9 @@ module.exports = (db, io, auths) => {
                 await auths.userInConversation(socket.name, data.conversation)
             ) {
                 data.type = utils.sanitize(data.type);
-                if (data.type == "text") { // dont want to sanitize image path, etc.
-                    data.content = utils.sanitize(data.content)
+                if (data.type == "text") {
+                    // dont want to sanitize image path, etc.
+                    data.content = utils.sanitize(data.content);
                 }
                 await auths.addMessage(data);
                 var result = (await auths.getConversation(data.conversation))
@@ -156,6 +146,12 @@ module.exports = (db, io, auths) => {
                 }
             }
         });
+
+        socket.on("contacts", async () => {
+            let contacts = await auths.getContacts(socket.name);
+            socket.emit("contacts", contacts);
+        });
+
         socket.on("disconnect", () => {
             delete auths.loginsByCookie[socket.cookieAuth].socket;
             auths.setStatus(socket.name, "offline");
