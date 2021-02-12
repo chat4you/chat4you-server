@@ -6,7 +6,6 @@ button {
     border: 1px solid var(--main-color);
     border-radius: 0px;
     padding: 5px;
-    transition: all 0.1s;
 }
 
 button:hover {
@@ -15,7 +14,7 @@ button:hover {
 }
 
 button:active {
-    transform: scale(0.9);
+    animation: click .2s linear;
 }
 
 input,
@@ -174,7 +173,7 @@ h1 {
 }
 
 .add-contact {
-    display: none;
+    display: block;
     visibility: hidden;
     position: absolute;
     top: 10%;
@@ -189,8 +188,7 @@ h1 {
     left: 0px;
     right: 0px;
     z-index: 1;
-    background-color: rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(5px);
+    background-color: rgba(128, 128, 128, 0.5);
 }
 
 .add-contact-content {
@@ -200,12 +198,18 @@ h1 {
     z-index: 2;
     display: flex;
     border: 1px solid var(--main-color);
+    transform: translateY(20px);
+    opacity: 0;
+    transition: transform 0.2s ease-out, opacity 0.2s ease-out;
 }
 
 .add-contact.visible {
-    display: block;
     visibility: visible;
-    
+}
+
+.add-contact.visible .add-contact-content {
+    transform: translateY(0px);
+    opacity: 1;
 }
 
 #add-contact-input {
@@ -266,5 +270,15 @@ h1 {
     to {
         transform: translateY(0px);
         opacity: 1;
+    }
+}
+
+@keyframes click {
+    from {
+        transform: scale(1);
+    } 50% {
+        transform: scale(0.9);
+    } to {
+        transform: scale(1);
     }
 }

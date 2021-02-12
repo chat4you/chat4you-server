@@ -1,5 +1,12 @@
 const crypto = require("crypto");
 const { sanitize } = require("./utils");
+const cfg = require("./config");
+
+// Setup the database
+const { Client } = require("pg");
+
+const db = new Client(cfg.db);
+db.connect();
 
 function hash(text, salt) {
     var hash = crypto.createHmac("md5", salt);
@@ -11,9 +18,10 @@ function radnStr(size) {
 }
 
 class Authmanager {
-    constructor(salt, db) {
-        this.salt = salt;
+    constructor() {
+        this.salt = cfg.secret;
         this.db = db;
+        this.sockets = {};
         this.loginsByCookie = {};
         this.cookiesByName = {};
     }
@@ -34,6 +42,10 @@ class Authmanager {
     login(username, password, callback) {
         // some anti xss
         username = sanitize(username);
+        // Create socket list if it dosent exists
+        if (!this.sockets[username]) {
+            this.sockets[username] = [];
+        }
         var passhash = hash(password, this.salt);
         var query = `SELECT * FROM users WHERE password_hash='${passhash}' AND name='${username}'`;
         this.db.query(query, (err, res) => {
@@ -104,6 +116,14 @@ class Authmanager {
         return false;
     }
 
+    async getFullName(name) {
+        var query = `SELECT fullname FROM users WHERE name='${name}'`;
+        var response = await this.query(query);
+        if (response.status == "sucess" && response.result[0]) {
+            return response.result[0].fullname;
+        }
+    }
+
     async getContacts(name) {
         var query = `SELECT * FROM conversations WHERE '${name}' = ANY (members)`;
         return await this.query(query);
@@ -129,17 +149,45 @@ class Authmanager {
     }
 
     async addMessage(msg) {
-        var query = `INSERT INTO messages VALUES ('${
-            msg.conversation
-        }', '${new Date().toISOString()}', '${msg.type}', '${msg.content}', '${
-            msg.sent_by
-        }')`;
+        var query = `INSERT INTO messages VALUES ('${msg.conversation}', NOW(), '${msg.sent_by}')`;
         return await this.query(query);
     }
 
     async getConversation(id) {
         var query = `SELECT * FROM conversations WHERE id = '${parseInt(id)}'`;
         return await this.query(query);
+    }
+
+    async hasContact(user1, user2) {
+        var query = `SELECT * FROM conversations WHERE type = 'chat' AND '${user1}' = ANY(members) AND '${user2}' = ANY(members)`;
+        var response = await this.query(query);
+        if (response.status == "sucess" && response.result.length == 1) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    async getUser(user) {
+        var query = `SELECT * FROM users WHERE name = '${user}'`;
+        var response = await this.query(query);
+        if (response.status == "sucess" && response.result[0]) {
+            return response.result[0];
+        } else {
+            return;
+        }
+    }
+
+    async createConverssation(conversation) {
+        var query =
+            "INSERT INTO conversations VALUES ((SELECT COUNT(id) + 1 FROM conversations), $1, $2, $3, $4)";
+        var res = await this.db.query(query, [
+            conversation.type,
+            conversation.name,
+            conversation.members,
+            conversation.accepted,
+        ]);
+        return res;
     }
 }
 

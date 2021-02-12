@@ -98,18 +98,16 @@ class ContactManager {
 
     // Function to fech full name of user from the server
     async getFullName(name) {
-        var response = await await fetch("/api/fullname-by-name", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ name: name }),
-        }).then((data) => data.json());
-        if (response.status != "error") {
-            return response[0].fullname;
-        } else {
-            console.error(response.error);
-        }
+        return await new Promise((resolve) => {
+            this.socket.on("fullnameOf", function (data) {
+                if (data.status == "sucess" && data.name == name) {
+                    resolve(data.fullname);
+                } else {
+                    resolve();
+                }
+            });
+            this.socket.emit("fullnameOf", { name: name });
+        });
     }
 
     // Function to add contact to contact list
@@ -138,6 +136,29 @@ class ContactManager {
         info.appendChild(title);
         info.appendChild(subTitle);
         info.classList.add("contact-info");
+        // Add accept/reject if unaccepted contact
+        let meIdx = contact.members.indexOf(this.me.name);
+        if (!contact.accepted[meIdx]) {
+            let acceptReject = document.createElement("div");
+            acceptReject.classList.add("accept-reject");
+            let accept = document.createElement("button");
+            let reject = document.createElement("button");
+            accept.innerHTML = "Accept";
+            reject.innerHTML = "Reject";
+            accept.classList.add("accept");
+            reject.classList.add("reject");
+            acceptReject.appendChild(accept);
+            acceptReject.appendChild(reject);
+            accept.addEventListener("click", () => {
+                // Accept the contact
+                acceptReject.remove();
+            });
+
+            reject.addEventListener("click", () => {
+                // Reject contact
+                container.remove();
+            });
+        }
         container.appendChild(info);
         container.classList.add("contact");
         this.contactContainers.appendChild(container);
@@ -147,7 +168,9 @@ class ContactManager {
             } else {
                 document.querySelector("#send").disabled
                     ? ((document.querySelector("#send").disabled = false),
-                      document.querySelector("#input-message").disabled = false)
+                      (document.querySelector(
+                          "#input-message"
+                      ).disabled = false))
                     : NaN;
                 this.contacts[contact.id].messages = new Conversation(
                     contact,
@@ -157,6 +180,15 @@ class ContactManager {
                 this.socket.emit("getMessages", { id: contact.id }); // Load the messages
             }
             this.currentChatId = contact.id;
+        });
+    }
+
+    async requestContact(name) {
+        return await new Promise((resolve) => {
+            this.socket.on("requestContacts", (data) => {
+                resolve(data);
+            });
+            this.socket.emit("requestContacts", { type: "chat", other: name }); // TBD: allow groups
         });
     }
 }
@@ -183,6 +215,7 @@ async function Chat() {
     let addContactButton = document.querySelector(".add-contact-button");
     let requestContactDiv = document.querySelector(".add-contact");
     let requestContactButton = document.querySelector("#add-contact-enter");
+    let requestContactInput = document.querySelector("#add-contact-input");
     let sendBtn = document.querySelector("#send");
     let hideBackground = document.querySelector(".hide-background");
     sendBtn.addEventListener("click", () => {
@@ -215,6 +248,14 @@ async function Chat() {
     });
     requestContactButton.addEventListener("click", () => {
         // Request the user
+        if (/\S/i.test(requestContactInput.value)) {
+            contacts.requestContact(requestContactInput.value).then((data) => {
+                if (data.status == "error") {
+                    console.error(data.error);
+                }
+            });
+            requestContactInput.value = "";
+        }
         // Close
         addContactButton.click();
     });

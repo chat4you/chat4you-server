@@ -1,8 +1,11 @@
 var express = require("express");
 var router = express.Router();
 const utils = require("../utils");
+const cfg = require("../config");
 
-module.exports = (db, io, auths) => {
+const auths = new (require("../auth"))();
+
+module.exports = (io) => {
     router.use((req, res, next) => {
         if (req.session.login) {
             next();
@@ -40,51 +43,12 @@ module.exports = (db, io, auths) => {
         res.redirect("/");
     });
 
-    router.post("/contact", (req, res) => {
-        var exists_query = `SELECT * FROM conversations WHERE '${req.session.name}' = ANY (members) AND
-            '${req.body.newname}' = ANY (members) AND NOT type = 'group'`;
-        db.query(exists_query, (err, resp) => {
-            if (err) {
-                console.error(err);
-            } else if (resp.rows[0]) {
-                res.json({ status: "error", error: "Contact exists" });
-            } else {
-                var create_query = `INSERT INTO conversations VALUES ((select count(*) from conversations), 'chat', '', '{${req.session.name}, ${req.body.newcontact}}', '{true, false}')`;
-                db.query(create_query, (err2, resp2) => {
-                    if (err2) {
-                        console.error(err2);
-                    } else {
-                        res.json({ status: "sucess" });
-                    }
-                });
-            }
-        });
-    });
-
-    router.post("/fullname-by-name", (req, res) => {
-        if (req.body.name) {
-            var get_by_name = `SELECT fullname FROM users WHERE name = '${req.body.name}' LIMIT 1`;
-            db.query(get_by_name, (err, resp) => {
-                if (err) {
-                    console.error(err);
-                } else if (resp.rows[0]) {
-                    res.json(resp.rows);
-                } else {
-                    res.json({ status: "error", error: "User not found" });
-                }
-            });
-        } else {
-            res.json({ status: "error", error: "No name specified" });
-        }
-    });
-
     io.on("connection", async (socket) => {
         await new Promise((resolve) => {
             socket.on("auth", (data) => {
                 var cookie = utils.cookieParser(data);
                 if (auths.verify(cookie.Auth, cookie.Verify)) {
                     socket.cookieAuth = cookie.Auth; // Save cookie for later
-                    auths.loginsByCookie[cookie.Auth].socket = socket;
                     let userData = auths.loginsByCookie[cookie.Auth].userData;
                     socket.name = userData.name;
                     socket.authenticated = true;
@@ -93,6 +57,7 @@ module.exports = (db, io, auths) => {
                         data: userData,
                     });
                     auths.setStatus(socket.name, "online"); // Chatter is now online
+                    auths.sockets[userData.name].push(socket);
                     resolve(); // Continue to nex step
                 } else {
                     socket.emit("auth", { status: "verifyFail" });
@@ -133,13 +98,11 @@ module.exports = (db, io, auths) => {
                 for (var i in result.members) {
                     if (
                         result.accepted[i] &&
-                        (await auths.getStatus(result.members[i])) == "online"
+                        auths.sockets[result.members[i]].length >= 1
                     ) {
-                        for (var ii in auths.cookiesByName[result.members[i]]) {
+                        for (var ii in auths.sockets[result.members[i]]) {
                             let otherSocket =
-                                auths.loginsByCookie[
-                                    auths.cookiesByName[result.members[i]][ii]
-                                ].socket;
+                                auths.sockets[result.members[i]][ii];
                             otherSocket.emit("message", data);
                         }
                     }
@@ -152,9 +115,78 @@ module.exports = (db, io, auths) => {
             socket.emit("contacts", contacts);
         });
 
+        socket.on("requestContacts", async (data) => {
+            data.other = utils.sanitize(data.other);
+            switch (
+                data.type // You might want to create groups
+            ) {
+                case "chat":
+                    if (
+                        typeof data.other == "string" &&
+                        !(await auths.hasContact(socket.name, data.other))
+                    ) {
+                        if (await auths.getUser(data.other)) {
+                            // Lets create the conversation
+                            let conversation = {
+                                type: "chat",
+                                name: "", // Name will be dynamic for each user
+                                members: [socket.name, data.other],
+                                accepted: [true, false],
+                            };
+                            let response = await auths.createConverssation(
+                                conversation
+                            );
+                            if (!response.err) {
+                                socket.emit("requestContacts", {
+                                    status: "sucess",
+                                });
+                            } else {
+                                socket.emit("requestContacts", {
+                                    status: "error",
+                                    error: "Database error",
+                                });
+                            }
+                        } else {
+                            socket.emit("requestContacts", {
+                                status: "error",
+                                error: "Other user dosen't exist",
+                            });
+                        }
+                    } else {
+                        socket.emit("requestContacts", {
+                            status: "error",
+                            error: "Already in conversation",
+                        });
+                    }
+                    break;
+
+                default:
+                    break;
+            }
+        });
+
+        socket.on("fullnameOf", async (data) => {
+            data.name ? (data.name = utils.sanitize(data.name)) : undefined;
+            if (data.name && auths.hasContact(data.name, socket.name)) {
+                let fullName = await auths.getFullName(data.name);
+                if (fullName) {
+                    socket.emit("fullnameOf", {
+                        status: "sucess",
+                        name: data.name,
+                        fullname: fullName,
+                    });
+                } else {
+                    socket.emit("fullnameOf", { status: "error" });
+                }
+            }
+        });
+
         socket.on("disconnect", () => {
-            delete auths.loginsByCookie[socket.cookieAuth].socket;
-            auths.setStatus(socket.name, "offline");
+            let socketArray = auths.sockets[socket.name];
+            socketArray.splice(socketArray.indexOf(socket), 1);
+            if (socketArray.length == 0) {
+                auths.setStatus(socket.name, "offline");
+            }
             console.log("Socket disconnected");
         });
     });
