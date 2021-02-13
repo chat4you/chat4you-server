@@ -116,6 +116,54 @@ class Authmanager {
         return false;
     }
 
+    async getConversation(id) {
+        var query = `SELECT * FROM conversations WHERE id = '${parseInt(id)}'`;
+        return await this.query(query);
+    }
+
+    async removeUserFromConversation(user, convId) {
+        if (await this.userInConversation(user, convId)) {
+            let conv = await this.getConversation(convId);
+            if (conv.result[0].type == "chat") {
+                let query = "DELETE FROM conversations WHERE id = $1";
+                let resp = await this.db.query(query, [convId]);
+                if (!resp.err) {
+                    return { status: "sucess" };
+                } else {
+                    return { status: "error", error: res.err.message };
+                }
+            } else if (conv.type == "group") {
+                console.warn("Groups not implemented");
+                return { status: "error", error: "Not Implemnted yet" };
+            }
+        } else {
+            return { status: "error", error: "User not in conversation" };
+        }
+    }
+
+    async acceptConversation(user, convId) {
+        if (await this.userInConversation(user, convId)) {
+            let conv = (await this.getConversation(convId)).result[0];
+            if (conv.type == "chat" || conv.type == "group") {
+                let query =
+                    "UPDATE conversations SET accepted[$1] = 'true' WHERE id = $2";
+                let resp = await this.db.query(query, [
+                    conv.members.indexOf(user) + 1, // SQL ist not zreo-indexed
+                    convId,
+                ]);
+                if (!resp.err) {
+                    return { status: "sucess" };
+                } else {
+                    return { status: "error", error: res.err.message };
+                }
+            } else {
+                return { status: "error", error: "Not Implemented" };
+            }
+        } else {
+            return { status: "error", error: "User not in conversation" };
+        }
+    }
+
     async getFullName(name) {
         var query = `SELECT fullname FROM users WHERE name='${name}'`;
         var response = await this.query(query);
@@ -149,12 +197,7 @@ class Authmanager {
     }
 
     async addMessage(msg) {
-        var query = `INSERT INTO messages VALUES ('${msg.conversation}', NOW(), '${msg.sent_by}')`;
-        return await this.query(query);
-    }
-
-    async getConversation(id) {
-        var query = `SELECT * FROM conversations WHERE id = '${parseInt(id)}'`;
+        var query = `INSERT INTO messages VALUES ('${msg.conversation}', NOW(), '${msg.type}', '${msg.content}', '${msg.sent_by}')`;
         return await this.query(query);
     }
 

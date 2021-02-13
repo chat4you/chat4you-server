@@ -1,5 +1,7 @@
-body {
+#content {
     display: flex;
+    height: 100vh;
+    max-width: 100%;
 }
 
 button {
@@ -14,7 +16,7 @@ button:hover {
 }
 
 button:active {
-    animation: click .2s linear;
+    animation: click 0.2s linear;
 }
 
 input,
@@ -112,6 +114,7 @@ h1 {
 .message {
     max-width: 70%;
     word-wrap: break-word;
+    word-break: break-all;
     padding: 3px;
     box-sizing: border-box;
     border-radius: 3px;
@@ -126,7 +129,7 @@ h1 {
 
 #input-message {
     flex: 1 1 auto;
-    overflow-y: scroll;
+    overflow-y: auto;
 }
 
 /* The add contact button */
@@ -248,6 +251,33 @@ h1 {
     align-items: center;
 }
 
+.accept-reject {
+    flex: 0 1 20%;
+    display: flex;
+    flex-direction: column;
+}
+
+.accept-reject > :last-child {
+    margin-top: 2px;
+}
+
+.accept-reject > button {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    border: none;
+    transition: color 0.2s linear;
+}
+
+.accept-reject .accept:hover {
+    background-color: green;
+    color: red;
+}
+
+.accept-reject .reject:hover {
+    background-color: red;
+    color: green;
+}
+
 .contact:hover {
     background-color: var(--forderground-color);
 }
@@ -261,6 +291,20 @@ h1 {
     display: none;
     visibility: hidden;
 }
+
+/* Notifications */
+
+.notification-parrent {
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    max-width: 30%;
+    padding: 5px;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+/* Animation keyframes */
 
 @keyframes fadeIn {
     from {
@@ -276,9 +320,11 @@ h1 {
 @keyframes click {
     from {
         transform: scale(1);
-    } 50% {
+    }
+    50% {
         transform: scale(0.9);
-    } to {
+    }
+    to {
         transform: scale(1);
     }
 }

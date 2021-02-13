@@ -1,5 +1,5 @@
 /* Load some fonts */
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Open+Sans&display=swap");
 
 @media (prefers-color-scheme: dark) {
     :root {
@@ -19,9 +19,11 @@
     }
 }
 
-html, body {
-    height: 100%;
-    width: 100%;
+html,
+body {
+    width: 100vw;
+    height: 100vh;
+    margin: 0px;
     background-color: var(--background);
 }
 
@@ -30,8 +32,10 @@ html, body {
     padding: 0px;
     color: var(--main-color);
     background-color: transparent;
-    font-family: 'Open Sans', sans-serif;
+    font-family: "Open Sans", sans-serif;
     box-sizing: border-box;
+    scrollbar-width: 4px;
+    scrollbar-color: var(--forderground-color) var(--background);
 }
 
 *:focus {

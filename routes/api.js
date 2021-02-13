@@ -64,6 +64,7 @@ module.exports = (io) => {
                 }
             });
         });
+
         console.log("Socket authenticated");
         // If authentication is not succesfull this will never be run
         socket.on("getMessages", async (data) => {
@@ -89,8 +90,11 @@ module.exports = (io) => {
             ) {
                 data.type = utils.sanitize(data.type);
                 if (data.type == "text") {
-                    // dont want to sanitize image path, etc.
+                    // dont want to sanitize image, audio, etc.
                     data.content = utils.sanitize(data.content);
+                    if (!/\S/i.test(data.content)) {
+                        return;
+                    }
                 }
                 await auths.addMessage(data);
                 var result = (await auths.getConversation(data.conversation))
@@ -98,6 +102,7 @@ module.exports = (io) => {
                 for (var i in result.members) {
                     if (
                         result.accepted[i] &&
+                        auths.sockets[result.members[i]] &&
                         auths.sockets[result.members[i]].length >= 1
                     ) {
                         for (var ii in auths.sockets[result.members[i]]) {
@@ -167,7 +172,7 @@ module.exports = (io) => {
 
         socket.on("fullnameOf", async (data) => {
             data.name ? (data.name = utils.sanitize(data.name)) : undefined;
-            if (data.name && auths.hasContact(data.name, socket.name)) {
+            if (data.name && (await auths.hasContact(data.name, socket.name))) {
                 let fullName = await auths.getFullName(data.name);
                 if (fullName) {
                     socket.emit("fullnameOf", {
@@ -179,6 +184,26 @@ module.exports = (io) => {
                     socket.emit("fullnameOf", { status: "error" });
                 }
             }
+        });
+
+        socket.on("acceptReject", async (data) => {
+            if (typeof data.id != "number") {
+                socket.emit("acceptReject", {
+                    status: "error",
+                    error: "Id is not a number",
+                });
+                return;
+            }
+            var res;
+            if (data.action == "reject") {
+                res = await auths.removeUserFromConversation(
+                    socket.name,
+                    data.id
+                );
+            } else if (data.action == "accept") {
+                res = await auths.acceptConversation(socket.name, data.id);
+            }
+            socket.emit("acceptReject", res);
         });
 
         socket.on("disconnect", () => {

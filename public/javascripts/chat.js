@@ -1,3 +1,26 @@
+class Notify {
+    constructor() {
+        this.activeMessages = [];
+        this.notifications = document.createElement("div");
+        this.notifications.classList.add("notification-parrent");
+        document.body.appendChild(this.notifications);
+    }
+
+    addNotification(title, message, type = "sucess") {
+        let notification = document.createElement("div");
+        notification.classList.add("notification");
+        type == "sucess"
+            ? notification.classList.add("sucess")
+            : notification.classList.add("error");
+        let head = document.createElement("div");
+        head.classList.add("notification-head");
+        let titleDiv = document.createElement("div");
+        let close = document.createElement("span");
+        titleDiv.innerHTML = title;
+        // Continue here
+    }
+}
+
 class Conversation {
     constructor(contact, me, hidden = false) {
         this.messages = [];
@@ -94,6 +117,11 @@ class ContactManager {
                 conversation.messages.addMessage(message);
             }
         });
+
+        this.socket.on("acceptReject", (data) => {
+            // Handle here
+            console.log(data);
+        });
     }
 
     // Function to fech full name of user from the server
@@ -138,6 +166,7 @@ class ContactManager {
         info.classList.add("contact-info");
         // Add accept/reject if unaccepted contact
         let meIdx = contact.members.indexOf(this.me.name);
+        container.appendChild(info);
         if (!contact.accepted[meIdx]) {
             let acceptReject = document.createElement("div");
             acceptReject.classList.add("accept-reject");
@@ -151,15 +180,24 @@ class ContactManager {
             acceptReject.appendChild(reject);
             accept.addEventListener("click", () => {
                 // Accept the contact
+                this.socket.emit("acceptReject", {
+                    id: contact.id,
+                    action: "accept",
+                });
                 acceptReject.remove();
             });
 
-            reject.addEventListener("click", () => {
+            reject.addEventListener("click", (e) => {
+                e.stopImmediatePropagation();
                 // Reject contact
+                this.socket.emit("acceptReject", {
+                    id: contact.id,
+                    action: "reject",
+                });
                 container.remove();
             });
+            container.appendChild(acceptReject);
         }
-        container.appendChild(info);
         container.classList.add("contact");
         this.contactContainers.appendChild(container);
         container.addEventListener("click", () => {
@@ -219,14 +257,16 @@ async function Chat() {
     let sendBtn = document.querySelector("#send");
     let hideBackground = document.querySelector(".hide-background");
     sendBtn.addEventListener("click", () => {
-        let message = {
-            conversation: contacts.currentChatId,
-            content: messageInput.value,
-            type: "text",
-            sent_by: me.id,
-        };
-        messageInput.value = "";
-        socket.emit("message", message);
+        if (/\S/i.test(messageInput.value)) {
+            let message = {
+                conversation: contacts.currentChatId,
+                content: messageInput.value,
+                type: "text",
+                sent_by: me.id,
+            };
+            socket.emit("message", message);
+            messageInput.value = "";
+        }
     });
     messageInput.addEventListener("keydown", (e) => {
         if (e.key == "Enter" && !e.shiftKey) {
