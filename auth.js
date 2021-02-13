@@ -33,7 +33,7 @@ class Authmanager {
                     console.error(query);
                     throw err;
                 } else {
-                    resolve({ status: "sucess", result: res.rows });
+                    resolve({ status: "succes", result: res.rows });
                 }
             });
         });
@@ -67,7 +67,7 @@ class Authmanager {
                 this.cookiesByName[username].push(randomString);
                 if (res.rows[0].verified) {
                     callback({
-                        status: "sucess",
+                        status: "succes",
                         cookieAuth: randomString,
                         cookieVerify: hashOfString,
                         userData: res.rows[0],
@@ -91,7 +91,7 @@ class Authmanager {
     logout(cookieAuth, cookieVerify, callback) {
         if (this.verify(cookieAuth, cookieVerify)) {
             delete this.loginsByCookie[cookieAuth];
-            callback({ status: "sucess" });
+            callback({ status: "succes" });
         } else {
             callback({ status: "error", error: "Verify failed" });
         }
@@ -110,7 +110,7 @@ class Authmanager {
             convId
         )}' AND '${sanitize(name)}' = ANY(members)`;
         var result = await this.query(query);
-        if (result.status == "sucess" && result.result[0]) {
+        if (result.status == "succes" && result.result[0]) {
             return true;
         }
         return false;
@@ -128,7 +128,7 @@ class Authmanager {
                 let query = "DELETE FROM conversations WHERE id = $1";
                 let resp = await this.db.query(query, [convId]);
                 if (!resp.err) {
-                    return { status: "sucess" };
+                    return { status: "succes" };
                 } else {
                     return { status: "error", error: res.err.message };
                 }
@@ -152,7 +152,7 @@ class Authmanager {
                     convId,
                 ]);
                 if (!resp.err) {
-                    return { status: "sucess" };
+                    return { status: "succes" };
                 } else {
                     return { status: "error", error: res.err.message };
                 }
@@ -167,7 +167,7 @@ class Authmanager {
     async getFullName(name) {
         var query = `SELECT fullname FROM users WHERE name='${name}'`;
         var response = await this.query(query);
-        if (response.status == "sucess" && response.result[0]) {
+        if (response.status == "succes" && response.result[0]) {
             return response.result[0].fullname;
         }
     }
@@ -204,7 +204,7 @@ class Authmanager {
     async hasContact(user1, user2) {
         var query = `SELECT * FROM conversations WHERE type = 'chat' AND '${user1}' = ANY(members) AND '${user2}' = ANY(members)`;
         var response = await this.query(query);
-        if (response.status == "sucess" && response.result.length == 1) {
+        if (response.status == "succes" && response.result.length == 1) {
             return true;
         } else {
             return false;
@@ -214,7 +214,7 @@ class Authmanager {
     async getUser(user) {
         var query = `SELECT * FROM users WHERE name = '${user}'`;
         var response = await this.query(query);
-        if (response.status == "sucess" && response.result[0]) {
+        if (response.status == "succes" && response.result[0]) {
             return response.result[0];
         } else {
             return;

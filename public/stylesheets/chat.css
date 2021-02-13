@@ -298,10 +298,55 @@ h1 {
     position: absolute;
     bottom: 0px;
     right: 0px;
-    max-width: 30%;
+    width: 30%;
     padding: 5px;
     min-height: 0;
+    max-height: 60vh;
+    overflow-x: hidden;
     overflow-y: auto;
+}
+
+.notification {
+    max-height: 150px;
+    width: 100%;
+    padding: 5px;
+    margin-top: 10px;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    animation: fadeIn 0.3s linear;
+    animation-fill-mode: forwards;
+}
+
+.notification.closing {
+    animation: close 0.2s linear;
+}
+
+.notification.success {
+    background-color: lightgreen;
+}
+
+.notification.error {
+    background-color: red;
+}
+
+.notification-head {
+    display: flex;
+    flex: 0 1;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.notification-head span {
+    cursor: pointer;
+    user-select: none;
+}
+
+.notification-message {
+    flex: 1 0;
+    word-wrap: break-word;
+    word-break: break-all;
+    color: black;
 }
 
 /* Animation keyframes */
@@ -326,5 +371,16 @@ h1 {
     }
     to {
         transform: scale(1);
+    }
+}
+
+@keyframes close {
+    from {
+        transform: translateX(0%);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(40%);
+        opacity: 0.2;
     }
 }

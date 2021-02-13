@@ -6,18 +6,43 @@ class Notify {
         document.body.appendChild(this.notifications);
     }
 
-    addNotification(title, message, type = "sucess") {
+    close(notification) {
+        notification.classList.add("closing");
+        this.activeMessages.slice(this.activeMessages.indexOf(notification), 1);
+        setTimeout(() => {
+            notification.remove();
+        }, 200);
+    }
+
+    addNotification(title, message, timeout, type = "success") {
         let notification = document.createElement("div");
         notification.classList.add("notification");
-        type == "sucess"
-            ? notification.classList.add("sucess")
+        type == "success"
+            ? notification.classList.add("success")
             : notification.classList.add("error");
         let head = document.createElement("div");
         head.classList.add("notification-head");
-        let titleDiv = document.createElement("div");
+        let titleDiv = document.createElement("h3");
         let close = document.createElement("span");
         titleDiv.innerHTML = title;
-        // Continue here
+        close.innerHTML = "X";
+        head.appendChild(titleDiv);
+        head.appendChild(close);
+        let content = document.createElement("p");
+        content.classList.add("notification-message");
+        content.innerHTML = message;
+        notification.appendChild(head);
+        notification.appendChild(content);
+        this.activeMessages.push(notification);
+        this.notifications.appendChild(notification);
+
+        close.addEventListener("click", () => {
+            this.close(notification);
+        });
+        setTimeout(() => {
+            this.close(notification);
+        }, timeout);
+        return notification;
     }
 }
 
@@ -83,25 +108,31 @@ class ContactManager {
         this.contacts = {}; // object where every key is the contactId
         this.contactContainers = document.querySelector(".contact-list");
         this.socket = socket;
+        this.notificator = new Notify();
         this.initSocket();
     }
 
     async initSocket() {
         await new Promise((done) => {
             this.socket.on("contacts", (contacts) => {
-                if (contacts.status == "sucess") {
+                if (contacts.status == "succes") {
                     contacts.result.forEach((contact) => {
                         this.addContact(contact);
                         done();
                     });
                 } else {
-                    console.error("Error getting contacts");
+                    this.notificator.addNotification(
+                        "Error!",
+                        "Error getting contacts",
+                        9e3,
+                        "error"
+                    );
                 }
             });
             this.socket.emit("contacts");
         });
         this.socket.on("getMessages", (data) => {
-            if (data.status == "sucess") {
+            if (data.status == "succes") {
                 if (!this.contacts[data.id].gotMessages) {
                     data.rows.forEach((message) => {
                         this.contacts[data.id].messages.addMessage(message);
@@ -119,8 +150,29 @@ class ContactManager {
         });
 
         this.socket.on("acceptReject", (data) => {
-            // Handle here
-            console.log(data);
+            this.notificator.addNotification(
+                "Accept - Reject",
+                data.error ? data.error : "Success!",
+                10e3,
+                data.status
+            );
+        });
+
+        this.socket.on("requestContacts", (data) => {
+            this.notificator.addNotification(
+                "Request contact",
+                data.error ? data.error : "Success!",
+                10e3,
+                data.status
+            );
+        });
+        this.socket.on("disconnect", () => {
+            this.notificator.addNotification(
+                "Socket error",
+                "Socket disconnected!",
+                10e3,
+                "error"
+            );
         });
     }
 
@@ -128,7 +180,7 @@ class ContactManager {
     async getFullName(name) {
         return await new Promise((resolve) => {
             this.socket.on("fullnameOf", function (data) {
-                if (data.status == "sucess" && data.name == name) {
+                if (data.status == "succes" && data.name == name) {
                     resolve(data.fullname);
                 } else {
                     resolve();
@@ -222,12 +274,7 @@ class ContactManager {
     }
 
     async requestContact(name) {
-        return await new Promise((resolve) => {
-            this.socket.on("requestContacts", (data) => {
-                resolve(data);
-            });
-            this.socket.emit("requestContacts", { type: "chat", other: name }); // TBD: allow groups
-        });
+        this.socket.emit("requestContacts", { type: "chat", other: name }); // TBD: allow groups
     }
 }
 
@@ -236,7 +283,7 @@ async function Chat() {
     let socket = io();
     let me = await new Promise((resolve) => {
         socket.on("auth", (res) => {
-            if (res.status == "sucess") {
+            if (res.status == "succes") {
                 resolve(res.data);
             } else {
                 socketReady = false;
@@ -248,7 +295,6 @@ async function Chat() {
         socket.emit("auth", document.cookie);
     });
     let contacts = new ContactManager(me, socket);
-
     let messageInput = document.querySelector("#input-message");
     let addContactButton = document.querySelector(".add-contact-button");
     let requestContactDiv = document.querySelector(".add-contact");
@@ -286,6 +332,7 @@ async function Chat() {
     hideBackground.addEventListener("click", () => {
         addContactButton.click();
     });
+
     requestContactButton.addEventListener("click", () => {
         // Request the user
         if (/\S/i.test(requestContactInput.value)) {
@@ -298,6 +345,11 @@ async function Chat() {
         }
         // Close
         addContactButton.click();
+    });
+
+    document.getElementById("logout").addEventListener("click", async () => {
+        await fetch("/api/logout");
+        document.location.reload();
     });
 }
 Chat();

@@ -53,7 +53,7 @@ module.exports = (io) => {
                     socket.name = userData.name;
                     socket.authenticated = true;
                     socket.emit("auth", {
-                        status: "sucess",
+                        status: "succes",
                         data: userData,
                     });
                     auths.setStatus(socket.name, "online"); // Chatter is now online
@@ -74,7 +74,7 @@ module.exports = (io) => {
                     new Date().toDateString()
                 );
                 socket.emit("getMessages", {
-                    status: "sucess",
+                    status: "succes",
                     id: data.id,
                     rows: messages.result,
                 });
@@ -143,7 +143,7 @@ module.exports = (io) => {
                             );
                             if (!response.err) {
                                 socket.emit("requestContacts", {
-                                    status: "sucess",
+                                    status: "succes",
                                 });
                             } else {
                                 socket.emit("requestContacts", {
@@ -176,7 +176,7 @@ module.exports = (io) => {
                 let fullName = await auths.getFullName(data.name);
                 if (fullName) {
                     socket.emit("fullnameOf", {
-                        status: "sucess",
+                        status: "succes",
                         name: data.name,
                         fullname: fullName,
                     });
