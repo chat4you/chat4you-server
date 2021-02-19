@@ -1,99 +1,75 @@
 const crypto = require("crypto");
-const { sanitize } = require("./utils");
+const { sanitize, radnStr, hash } = require("./utils");
 const cfg = require("./config");
-
-// Setup the database
-const { Client } = require("pg");
-
-const db = new Client(cfg.db);
-db.connect();
-
-function hash(text, salt) {
-    var hash = crypto.createHmac("md5", salt);
-    return hash.update(text).digest("hex");
-}
-
-function radnStr(size) {
-    return crypto.randomBytes(size).toString("hex").slice(0, size);
-}
+// Setup database
+const { Sequelize, Op } = require("sequelize");
+const sequelize = new Sequelize(cfg.db.database, cfg.db.user, cfg.db.password, {
+    host: cfg.db.host,
+    dialect: "postgres",
+});
+const Conversations = require("./models/conversations")(sequelize);
+const Messages = require("./models/messages")(sequelize);
+const Users = require("./models/users")(sequelize);
 
 class Authmanager {
     constructor() {
         this.salt = cfg.secret;
-        this.db = db;
         this.sockets = {};
         this.loginsByCookie = {};
         this.cookiesByName = {};
     }
 
-    query(query) {
-        return new Promise((resolve) => {
-            this.db.query(query, (err, res) => {
-                if (err) {
-                    console.error(query);
-                    throw err;
-                } else {
-                    resolve({ status: "succes", result: res.rows });
-                }
-            });
-        });
-    }
-
-    login(username, password, callback) {
+    async login(username, password) {
         // some anti xss
         username = sanitize(username);
         // Create socket list if it dosent exists
-        if (!this.sockets[username]) {
-            this.sockets[username] = [];
-        }
         var passhash = hash(password, this.salt);
-        var query = `SELECT * FROM users WHERE password_hash='${passhash}' AND name='${username}'`;
-        this.db.query(query, (err, res) => {
-            if (err) {
-                callback({ status: "error", error: err });
-                return;
-            } else if (res.rows[0]) {
-                var randomString = radnStr(50);
-                var hashOfString = hash(randomString, this.salt);
-                var user = res.rows[0];
-                delete user.password_hash; // Hide sensitive information
-                this.loginsByCookie[randomString] = {
-                    username: username,
-                    userData: user,
-                };
-                if (!this.cookiesByName[username]) {
-                    this.cookiesByName[username] = []; // User might have multiple sessions
-                }
-                this.cookiesByName[username].push(randomString);
-                if (res.rows[0].verified) {
-                    callback({
-                        status: "succes",
-                        cookieAuth: randomString,
-                        cookieVerify: hashOfString,
-                        userData: res.rows[0],
-                    });
-                    return;
-                }
-                callback({
+        let user = await Users.findone({
+            where: {
+                name: username,
+                password_hash: passhash,
+            },
+        });
+        if (user) {
+            var randomString = radnStr(50);
+            var hashOfString = hash(randomString, this.salt);
+            delete user.password_hash; // Hide sensitive information
+            this.loginsByCookie[randomString] = {
+                username: username,
+                userData: user,
+            };
+            if (!this.cookiesByName[username]) {
+                this.cookiesByName[username] = []; // User might have multiple sessions
+            }
+            this.cookiesByName[username].push(randomString);
+            if (!user.verified) {
+                return {
                     status: "unverified",
                     cookieAuth: randomString,
                     cookieVerify: hashOfString,
                     userData: res.rows[0],
-                });
-                return;
-            } else {
-                callback({ status: "wrongpass" });
-                return;
+                };
             }
-        });
+            if (!this.sockets[username]) {
+                this.sockets[username] = [];
+            }
+            return {
+                status: "succes",
+                cookieAuth: randomString,
+                cookieVerify: hashOfString,
+                userData: res.rows[0],
+            };
+        } else {
+            return { status: "wrongpass" };
+        }
     }
 
-    logout(cookieAuth, cookieVerify, callback) {
+    logout(cookieAuth, cookieVerify) {
         if (this.verify(cookieAuth, cookieVerify)) {
             delete this.loginsByCookie[cookieAuth];
-            callback({ status: "succes" });
+            return { status: "succes" };
         } else {
-            callback({ status: "error", error: "Verify failed" });
+            return { status: "error", error: "Verify failed" };
         }
     }
 
@@ -106,32 +82,37 @@ class Authmanager {
     }
 
     async userInConversation(name, convId) {
-        var query = `SELECT * FROM conversations WHERE id = '${parseInt(
-            convId
-        )}' AND '${sanitize(name)}' = ANY(members)`;
-        var result = await this.query(query);
-        if (result.status == "succes" && result.result[0]) {
+        let result = Conversations.findOne({
+            where: {
+                [Op.and]: [
+                    { id: parseInt(convId) },
+                    {
+                        members: {
+                            [Op.contains]: sanitize(name),
+                        },
+                    },
+                ],
+            },
+        });
+        if (result) {
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     async getConversation(id) {
-        var query = `SELECT * FROM conversations WHERE id = '${parseInt(id)}'`;
-        return await this.query(query);
+        return await Conversations.findOne({ where: { id: id } });
     }
 
     async removeUserFromConversation(user, convId) {
         if (await this.userInConversation(user, convId)) {
             let conv = await this.getConversation(convId);
-            if (conv.result[0].type == "chat") {
-                let query = "DELETE FROM conversations WHERE id = $1";
-                let resp = await this.db.query(query, [convId]);
-                if (!resp.err) {
-                    return { status: "succes" };
-                } else {
-                    return { status: "error", error: res.err.message };
-                }
+            if (conv.type == "chat") {
+                let destroyed = await Conversations.destroy({
+                    where: { id: paresInt(convId) },
+                });
+                return { status: "succes" };
             } else if (conv.type == "group") {
                 console.warn("Groups not implemented");
                 return { status: "error", error: "Not Implemnted yet" };
@@ -143,8 +124,9 @@ class Authmanager {
 
     async acceptConversation(user, convId) {
         if (await this.userInConversation(user, convId)) {
-            let conv = (await this.getConversation(convId)).result[0];
+            let conv = await this.getConversation(convId);
             if (conv.type == "chat" || conv.type == "group") {
+                // Continue here
                 let query =
                     "UPDATE conversations SET accepted[$1] = 'true' WHERE id = $2";
                 let resp = await this.db.query(query, [

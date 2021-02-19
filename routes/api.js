@@ -44,11 +44,13 @@ module.exports = (io) => {
     });
 
     io.on("connection", async (socket) => {
+        var socketType;
         await new Promise((resolve) => {
             socket.on("auth", (data) => {
                 var cookie = utils.cookieParser(data);
                 if (auths.verify(cookie.Auth, cookie.Verify)) {
                     socket.cookieAuth = cookie.Auth; // Save cookie for later
+                    socketType = auths.loginsByCookie[cookie.Auth].accountType;
                     let userData = auths.loginsByCookie[cookie.Auth].userData;
                     socket.name = userData.name;
                     socket.authenticated = true;
@@ -64,7 +66,6 @@ module.exports = (io) => {
                 }
             });
         });
-
         console.log("Socket authenticated");
         // If authentication is not succesfull this will never be run
         socket.on("getMessages", async (data) => {

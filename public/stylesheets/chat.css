@@ -4,6 +4,11 @@
     max-width: 100%;
 }
 
+#profile-name {
+    cursor: pointer;
+    user-select: none;
+}
+
 button {
     border: 1px solid var(--main-color);
     border-radius: 0px;
@@ -185,6 +190,8 @@ h1 {
 }
 
 .hide-background {
+    display: none;
+    visibility: hidden;
     position: fixed;
     top: 0px;
     bottom: 0px;
@@ -192,6 +199,11 @@ h1 {
     right: 0px;
     z-index: 1;
     background-color: rgba(128, 128, 128, 0.5);
+}
+
+.hide-background.visible {
+    display: block;
+    visibility: visible;
 }
 
 .add-contact-content {
@@ -292,6 +304,42 @@ h1 {
     visibility: hidden;
 }
 
+/* Edit profile */
+
+.edit-profile {
+    position: absolute;
+    display: none;
+    visibility: hidden;
+    top: 10%;
+    bottom: 10%;
+    right: 30%;
+    left: 30%;
+    background-color: var(--background);
+    box-shadow: 10px 10px 20px var(--shadow-color);
+    padding: 15px;
+    z-index: 2;
+}
+
+.edit-profile.visible {
+    display: block;
+    visibility: visible;
+}
+
+#edit-profile-table {
+    width: 100%;
+    text-align: left;
+    border-collapse: collapse;
+}
+
+#edit-profile-table th {
+    padding: 5px;
+    border: 1px solid rgba(128, 128, 128, 0.5);
+}
+
+#edit-profile-table th * {
+    width: 100%;
+}
+
 /* Notifications */
 
 .notification-parrent {
@@ -316,6 +364,8 @@ h1 {
     flex-direction: column;
     animation: fadeIn 0.3s linear;
     animation-fill-mode: forwards;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    z-index: 3;
 }
 
 .notification.closing {
@@ -323,11 +373,11 @@ h1 {
 }
 
 .notification.success {
-    background-color: lightgreen;
+    background-color: #82ffd1;
 }
 
 .notification.error {
-    background-color: red;
+    background-color: #ff6060;
 }
 
 .notification-head {
