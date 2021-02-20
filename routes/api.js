@@ -19,22 +19,19 @@ module.exports = (io) => {
     });
 
     // Login api
-    router.post("/login", (req, res) => {
-        auths.login(req.body.username, req.body.password, (result) => {
-            if (result.status == "wrongpass") {
-                console.log(
-                    `User ${req.body.username} tried to login with password ${req.body.password}.`
-                );
-            } else {
-                req.session.login = true;
-                req.session.name = req.body.username;
-                req.session.fullname = result.userData.fullname;
-                res.cookie("Auth", result.cookieAuth);
-                res.cookie("Verify", result.cookieVerify);
-                console.log(`User ${req.body.username} logged in succesfully.`);
-                res.json({ login: true });
-            }
-        });
+    router.post("/login", async (req, res) => {
+        let result = await auths.login(req.body.username, req.body.password);
+        if (result.status != "succes") {
+            console.log(result);
+        } else {
+            req.session.login = true;
+            req.session.name = req.body.username;
+            req.session.fullname = result.userData.fullname;
+            res.cookie("Auth", result.cookieAuth);
+            res.cookie("Verify", result.cookieVerify);
+            console.log(`User ${req.body.username} logged in succesfully.`);
+            res.json({ login: true });
+        }
     });
 
     router.get("/logout", (req, res) => {
@@ -58,9 +55,9 @@ module.exports = (io) => {
                         status: "succes",
                         data: userData,
                     });
-                    auths.setStatus(socket.name, "online"); // Chatter is now online
+                    auths.setStatus(socket.name, "online");
                     auths.sockets[userData.name].push(socket);
-                    resolve(); // Continue to nex step
+                    resolve(); // Continue to next step
                 } else {
                     socket.emit("auth", { status: "verifyFail" });
                 }
@@ -70,14 +67,11 @@ module.exports = (io) => {
         // If authentication is not succesfull this will never be run
         socket.on("getMessages", async (data) => {
             if (await auths.userInConversation(socket.name, data.id)) {
-                var messages = await auths.getMessages(
-                    data.id,
-                    new Date().toDateString()
-                );
+                var messages = await auths.getMessages(data.id);
                 socket.emit("getMessages", {
                     status: "succes",
                     id: data.id,
-                    rows: messages.result,
+                    result: messages,
                 });
             } else {
                 socket.emit("getMessages", { status: "authFailed" });
@@ -98,17 +92,18 @@ module.exports = (io) => {
                     }
                 }
                 await auths.addMessage(data);
-                var result = (await auths.getConversation(data.conversation))
-                    .result[0];
-                for (var i in result.members) {
+                var conversation = await auths.getConversation(
+                    data.conversation
+                );
+                for (var i in conversation.members) {
                     if (
-                        result.accepted[i] &&
-                        auths.sockets[result.members[i]] &&
-                        auths.sockets[result.members[i]].length >= 1
+                        conversation.accepted[i] &&
+                        auths.sockets[conversation.members[i]] &&
+                        auths.sockets[conversation.members[i]].length >= 1
                     ) {
-                        for (var ii in auths.sockets[result.members[i]]) {
+                        for (var ii in auths.sockets[conversation.members[i]]) {
                             let otherSocket =
-                                auths.sockets[result.members[i]][ii];
+                                auths.sockets[conversation.members[i]][ii];
                             otherSocket.emit("message", data);
                         }
                     }
@@ -118,7 +113,10 @@ module.exports = (io) => {
 
         socket.on("contacts", async () => {
             let contacts = await auths.getContacts(socket.name);
-            socket.emit("contacts", contacts);
+            socket.emit("contacts", {
+                status: contacts ? "succes" : "error",
+                result: contacts,
+            });
         });
 
         socket.on("requestContacts", async (data) => {

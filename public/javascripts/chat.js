@@ -137,7 +137,7 @@ class ContactManager {
         this.socket.on("getMessages", (data) => {
             if (data.status == "succes") {
                 if (!this.contacts[data.id].gotMessages) {
-                    data.rows.forEach((message) => {
+                    data.result.forEach((message) => {
                         this.contacts[data.id].messages.addMessage(message);
                     });
                     this.contacts[data.id].gotMessages = true; // Don't get messages multiple times

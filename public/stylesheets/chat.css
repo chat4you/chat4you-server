@@ -373,11 +373,11 @@ h1 {
 }
 
 .notification.success {
-    background-color: #82ffd1;
+    background-color: #00ffa2;
 }
 
 .notification.error {
-    background-color: #ff6060;
+    background-color: #ff0000;
 }
 
 .notification-head {
