@@ -2,15 +2,12 @@ const crypto = require("crypto");
 const { sanitize, radnStr, hash } = require("./utils");
 const cfg = require("./config");
 // Setup database
-const { Sequelize, Op } = require("sequelize");
-const { type } = require("os");
-const sequelize = new Sequelize(cfg.db.database, cfg.db.user, cfg.db.password, {
-    host: cfg.db.host,
-    dialect: "postgres",
-});
-const Conversations = require("./models/conversations")(sequelize);
-const Messages = require("./models/messages")(sequelize);
-const Users = require("./models/users")(sequelize);
+const { Op } = require("sequelize");
+const sequelize = require("./models/db");
+
+const Conversations = require("./models/conversations");
+const Messages = require("./models/messages");
+const Users = require("./models/users");
 Conversations.sync();
 Messages.sync();
 Users.sync();
@@ -128,18 +125,22 @@ class Authmanager {
 
     async acceptConversation(user, convId) {
         if (await this.userInConversation(user, convId)) {
+            console.log("accepting conversation..");
             let conv = await this.getConversation(convId);
             if (conv.type == "chat" || conv.type == "group") {
-                conv.accepted[conv.members.indexOf(user) + 1] = true;
-                conv.update({
-                    accepted: conv.accepted,
-                });
-
+                console.log(conv);
+                let accepted = conv.accepted; // Workaround since sequelize dosnet detect changes in array
+                accepted[conv.members.indexOf(user)] = true;
+                conv.accepted = null;
+                conv.accepted = accepted;
+                console.log(conv);
+                await conv.save();
                 return { status: "success" };
             } else {
                 return { status: "error", error: "Not Implemented" };
             }
         } else {
+            console.log("User in conversation");
             return { status: "error", error: "User not in conversation" };
         }
     }
