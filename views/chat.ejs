@@ -1,0 +1,78 @@
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="/stylesheets/chat.css" />
+        <link rel="stylesheet" href="/stylesheets/main.css" />
+        <title>Chat</title>
+    </head>
+    <body>
+        <div id="content">
+            <div class="messages">
+                <div class="messages-header">
+                    <h1 id="chat-name">Open a chat to comunicate</h1>
+                </div>
+                <div class="message-container"></div>
+                <div class="message-input">
+                    <button id="send" disabled="disabled">Send</button
+                    ><textarea
+                        id="input-message"
+                        disabled="disabled"
+                    ></textarea>
+                </div>
+            </div>
+            <div class="navigation">
+                <div class="header">
+                    <h1 id="profile-name"><%= fullname %></h1>
+                    <button id="logout">Logout</button>
+                </div>
+                <div class="contacts">
+                    <div class="add-contact-activate">
+                        <button class="add-contact-button">
+                            <span class="add-contact-1"></span
+                            ><span class="add-contact-2"></span>
+                        </button>
+                        <h2>Add contact</h2>
+                    </div>
+                    <div class="contact-list"></div>
+                </div>
+            </div>
+            <div class="add-contact">
+                <div class="add-contact-content">
+                    <input
+                        type="text"
+                        id="add-contact-input"
+                        placeholder="Enter the exact uername"
+                    /><button id="add-contact-enter">Request</button>
+                </div>
+            </div>
+            <div class="edit-profile">
+                <h2>Edit Profile</h2>
+                <table id="edit-profile-table">
+                    <tr>
+                        <th><label for="name-edit">Name:</label></th>
+                        <th>
+                            <input type="text" id="name-edit" />
+                        </th>
+                    </tr>
+                    <tr>
+                        <th><label for="email-edit">E-mail:</label></th>
+                        <th>
+                            <input type="text" id="email-edit" />
+                        </th>
+                    </tr>
+                    <tr>
+                        <th colspan="2">
+                            <button type="submit" id="save-profile">
+                                Save
+                            </button>
+                        </th>
+                    </tr>
+                </table>
+            </div>
+            <div class="hide-background"></div>
+            <script src="/socket.io/socket.io.js"></script>
+            <script src="/javascripts/chat.js"></script>
+        </div>
+    </body>
+</html>

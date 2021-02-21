@@ -1,3 +1,5 @@
+const crypto = require("crypto");
+
 function cookieParser(cookie) {
     var cookies = {};
     var splited = cookie.split(";");
@@ -16,5 +18,18 @@ function sanitize(text) {
         .replace(/'/g, "&apos;");
 }
 
-module.exports.cookieParser = cookieParser;
-module.exports.sanitize = sanitize;
+function hash(text, salt) {
+    var hash = crypto.createHmac("md5", salt);
+    return hash.update(text).digest("hex");
+}
+
+function radnStr(size) {
+    return crypto.randomBytes(size).toString("hex").slice(0, size);
+}
+
+module.exports = {
+    cookieParser: cookieParser,
+    sanitize: sanitize,
+    hash: hash,
+    radnStr: radnStr,
+};

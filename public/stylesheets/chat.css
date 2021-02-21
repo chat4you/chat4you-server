@@ -4,9 +4,14 @@
     max-width: 100%;
 }
 
+#profile-name {
+    cursor: pointer;
+    user-select: none;
+}
+
 button {
     border: 1px solid var(--main-color);
-    border-radius: 0px;
+    border-radius: 2px;
     padding: 5px;
 }
 
@@ -23,7 +28,7 @@ input,
 textarea,
 #input-message {
     border: 1px solid var(--main-color);
-    border-radius: 0px;
+    border-radius: 2px;
     padding: 5px;
     resize: none;
 }
@@ -43,6 +48,7 @@ h1 {
     flex: 0 0 30%;
     display: flex;
     flex-direction: column;
+    background-color: var(--background-lite);
 }
 
 .header {
@@ -56,7 +62,7 @@ h1 {
 .message-container {
     flex: 1;
     box-sizing: border-box;
-    overflow-y: hidden;
+    overflow: hidden;
     display: flex;
 }
 
@@ -64,6 +70,7 @@ h1 {
     flex: 0 1 1em;
     display: flex;
     border-bottom: 1px solid var(--main-color);
+    box-shadow: 0px 5px 30px var(--shadow-color);
 }
 
 .chat {
@@ -84,6 +91,9 @@ h1 {
 .message-input {
     flex: 0 1 3em;
     display: flex;
+    padding: 5px;
+    box-shadow: 3px 0px 5px var(--shadow-color) inset,
+        0px 0px 10px var(--shadow-color) inset;
 }
 
 .message-line {
@@ -121,6 +131,7 @@ h1 {
     background-color: var(--forderground-color);
     animation: fadeIn 0.2s linear;
     animation-fill-mode: forwards;
+    box-shadow: 5px 3px 7px var(--shadow-color);
 }
 
 #send {
@@ -129,6 +140,7 @@ h1 {
 
 #input-message {
     flex: 1 1 auto;
+    margin-left: 5px;
     overflow-y: auto;
 }
 
@@ -185,6 +197,8 @@ h1 {
 }
 
 .hide-background {
+    display: none;
+    visibility: hidden;
     position: fixed;
     top: 0px;
     bottom: 0px;
@@ -192,6 +206,11 @@ h1 {
     right: 0px;
     z-index: 1;
     background-color: rgba(128, 128, 128, 0.5);
+}
+
+.hide-background.visible {
+    display: block;
+    visibility: visible;
 }
 
 .add-contact-content {
@@ -230,7 +249,11 @@ h1 {
     cursor: pointer;
     flex: 0 1 50px;
     padding: 5px;
-    transition: all 0.2s ease-in-out;
+    transition: all 0.2s ease-in-out, transform 0.1s linear;
+}
+
+.contact:active {
+    transform: scale(0.9);
 }
 
 .contact-profile {
@@ -292,6 +315,42 @@ h1 {
     visibility: hidden;
 }
 
+/* Edit profile */
+
+.edit-profile {
+    position: absolute;
+    display: none;
+    visibility: hidden;
+    top: 10%;
+    bottom: 10%;
+    right: 30%;
+    left: 30%;
+    background-color: var(--background);
+    box-shadow: 10px 10px 20px var(--shadow-color);
+    padding: 15px;
+    z-index: 2;
+}
+
+.edit-profile.visible {
+    display: block;
+    visibility: visible;
+}
+
+#edit-profile-table {
+    width: 100%;
+    text-align: left;
+    border-collapse: collapse;
+}
+
+#edit-profile-table th {
+    padding: 5px;
+    border: 1px solid rgba(128, 128, 128, 0.5);
+}
+
+#edit-profile-table th * {
+    width: 100%;
+}
+
 /* Notifications */
 
 .notification-parrent {
@@ -316,6 +375,8 @@ h1 {
     flex-direction: column;
     animation: fadeIn 0.3s linear;
     animation-fill-mode: forwards;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    z-index: 3;
 }
 
 .notification.closing {
@@ -323,11 +384,11 @@ h1 {
 }
 
 .notification.success {
-    background-color: lightgreen;
+    background-color: #12d600;
 }
 
 .notification.error {
-    background-color: red;
+    background-color: #ff0000;
 }
 
 .notification-head {

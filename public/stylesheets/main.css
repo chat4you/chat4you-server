@@ -6,6 +6,7 @@
         --background: black;
         --shadow-color: green;
         --main-color: green;
+        --background-lite: rgba(255, 255, 255, 0.1);
         --forderground-color: rgb(44, 44, 44);
     }
 }
@@ -13,8 +14,9 @@
 @media (prefers-color-scheme: light) {
     :root {
         --background: white;
-        --shadow-color: rgba(189, 183, 107, 0.568);
+        --shadow-color: rgba(189, 183, 107, 0.5);
         --main-color: blue;
+        --background-lite: rgba(189, 183, 107, 0.05);
         --forderground-color: lightblue;
     }
 }

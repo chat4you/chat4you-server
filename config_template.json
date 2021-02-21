@@ -1,0 +1,12 @@
+{
+    "db": {
+        "user": "DB_USER",
+        "host": "DB_HOST",
+        "database": "DB_NAME",
+        "password": "DB_PASS",
+        "port": 5432
+    },
+    "secret": "SECRET",
+    "session_secret": "SECRET",
+    "port": 3000
+}
