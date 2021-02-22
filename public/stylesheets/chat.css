@@ -44,8 +44,6 @@ h1 {
 }
 
 .navigation {
-    border-left: 1px solid var(--main-color);
-    flex: 0 0 30%;
     display: flex;
     flex-direction: column;
     background-color: var(--background-lite);
@@ -69,6 +67,7 @@ h1 {
 .messages-header {
     flex: 0 1 1em;
     display: flex;
+    justify-content: space-between;
     border-bottom: 1px solid var(--main-color);
     box-shadow: 0px 5px 30px var(--shadow-color);
 }
@@ -443,5 +442,53 @@ h1 {
     to {
         transform: translateX(40%);
         opacity: 0.2;
+    }
+}
+
+/* Design for desktop */
+@media only screen and (min-width: 720px) {
+    #content {
+        display: flex;
+    }
+    .navigation {
+        border-left: 1px solid var(--main-color);
+        flex: 0 0 30%;
+    }
+
+    #back2menu {
+        display: none;
+        visibility: hidden;
+    }
+}
+
+/* Desing for mobile */
+@media only screen and (max-width: 720px) {
+    .navigation,
+    .messages {
+        position: absolute;
+        top: 0px;
+        bottom: 0px;
+        right: 0px;
+        left: 0px;
+    }
+
+    .messages {
+        height: 100vh;
+        width: 100vw;
+        transform: translateX(-100vw);
+        z-index: 1;
+        opacity: 0;
+        transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+        background-color: var(--background);
+    }
+
+    .messages.show {
+        transform: translateX(0vw);
+        opacity: 1;
+    }
+
+    #back2menu {
+        /* background-image: url("/images/arrow-back.svg"); */
+        margin: auto;
     }
 }

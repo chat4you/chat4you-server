@@ -1,7 +1,19 @@
-body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+@media (prefers-color-scheme: dark) {
+    :root {
+        --main-color: rgb(143, 226, 140);
+    }
+}
+
+#background-logo {
+    position: absolute;
+    top: 0px;
+    bottom: 0px;
+    left: 0px;
+    right: 0px;
+    background-image: url("/images/logo.svg");
+    background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
 }
 
 h1 {
@@ -9,8 +21,8 @@ h1 {
 }
 
 input.login-input {
-    background-color: transparent;
-    border: solid 1px var(--main-color);
+    background-color: transparent !important;
+    border-bottom: solid 1px var(--main-color);
     text-align: center;
 }
 
@@ -25,7 +37,7 @@ input.login-input::placeholder {
 .login-item {
     border: none;
     padding: 5px;
-    margin-top: 5px;;
+    margin-top: 20px;
     width: 100%;
     border-radius: 5px;
 }
@@ -33,7 +45,7 @@ input.login-input::placeholder {
 .submit {
     color: white;
     background-color: red;
-    transition: all .2s;
+    transition: all 0.2s;
     font-weight: bolder;
 }
 
@@ -43,12 +55,34 @@ input.login-input::placeholder {
 }
 
 .login {
+    height: 100%;
     flex: 0 1 20em;
     display: flex;
     flex-direction: column;
-    padding: 5px;
+    padding: 20px;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 0 100px var(--shadow-color), 0px 20px 50px var(--shadow-color);
-    border-radius: 10px;
+    backdrop-filter: blur(1px);
+}
+
+@media only screen and (min-width: 400px) {
+    .login-container {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        width: 100%;
+        z-index: 2;
+    }
+    .login-item {
+        margin-top: 5px;
+    }
+    .login {
+        height: auto;
+        padding: 5px;
+        box-shadow: 0 0 100px var(--shadow-color),
+            0px 20px 50px var(--shadow-color);
+        border-radius: 10px;
+    }
 }
