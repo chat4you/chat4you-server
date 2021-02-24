@@ -14,7 +14,6 @@ Users.sync();
 
 class Authmanager {
     constructor() {
-        this.salt = cfg.secret;
         this.sockets = {};
         this.loginsByCookie = {};
         this.cookiesByName = {};
@@ -24,7 +23,7 @@ class Authmanager {
         // some anti xss
         username = sanitize(username);
         // Create socket list if it dosent exists
-        var passhash = hash(password, this.salt);
+        var passhash = hash(password, cfg.secret);
         let user = await Users.findOne({
             where: {
                 name: username,
@@ -33,7 +32,7 @@ class Authmanager {
         });
         if (user) {
             var randomString = radnStr(50);
-            var hashOfString = hash(randomString, this.salt);
+            var hashOfString = hash(randomString, cfg.secret);
             delete user.password_hash; // Hide sensitive information
             this.loginsByCookie[randomString] = {
                 username: username,
@@ -75,7 +74,7 @@ class Authmanager {
     }
 
     verify(cookieAuth, cookieVerify) {
-        if (hash(cookieAuth, this.salt) == cookieVerify) {
+        if (hash(cookieAuth, cfg.secret) == cookieVerify) {
             return true;
         } else {
             return false;

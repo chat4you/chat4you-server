@@ -41,9 +41,12 @@ h1 {
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .navigation {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-direction: column;
     background-color: var(--background-lite);
@@ -65,11 +68,12 @@ h1 {
 }
 
 .messages-header {
+    position: relative;
     flex: 0 1 1em;
     display: flex;
     justify-content: space-between;
     border-bottom: 1px solid var(--main-color);
-    box-shadow: 0px 5px 30px var(--shadow-color);
+    box-shadow: 0px 5px 30px 15px var(--background-lite);
 }
 
 .chat {
@@ -445,6 +449,10 @@ h1 {
     }
 }
 
+#path20 {
+    stroke: var(--main-color);
+}
+
 /* Design for desktop */
 @media only screen and (min-width: 720px) {
     #content {
@@ -488,7 +496,12 @@ h1 {
     }
 
     #back2menu {
-        /* background-image: url("/images/arrow-back.svg"); */
+        border: none;
         margin: auto;
+        margin-right: 5px;
+    }
+
+    #back2menu:active #path20 {
+        stroke: var(--background);
     }
 }
