@@ -57,9 +57,7 @@ class Conversation {
         this.chatContent = document.createElement("div");
         this.chatContent.classList.add("chat");
         cssQuery("#chat-name").innerHTML = this.contact.name;
-        document
-            .querySelector(".message-container")
-            .appendChild(this.chatContent); // show the chat
+        cssQuery(".message-container").appendChild(this.chatContent); // show the chat
         if (!hidden) {
             this.show();
         }
@@ -73,6 +71,9 @@ class Conversation {
         }
         this.chatContent.classList.remove("closed-chat");
         this.chatContent.classList.add("open-chat");
+        if (window.matchMedia("only screen and (max-width: 720px)").matches) {
+            cssQuery(".messages").classList.add("show");
+        }
     }
 
     async addMessage(msg) {
@@ -360,6 +361,9 @@ async function Chat() {
         cssQuery(".edit-profile").classList.add("visible");
         cssQuery(".hide-background").classList.add("visible");
         currentDialog = cssQuery(".edit-profile");
+    });
+    cssQuery("#back2menu").addEventListener("click", () => {
+        cssQuery(".messages").classList.remove("show");
     });
 }
 Chat();

@@ -6,20 +6,24 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="stylesheet" href="/stylesheets/main.css" />
         <link rel="stylesheet" href="/stylesheets/login.css" />
+        <link rel="shortcut icon" href="/images/logo.svg" type="image/x-icon" />
         <title>Login</title>
     </head>
     <body>
-        <div class="login">
-            <h1>Login</h1>
-            <input type="text" id="username" class="login-item login-input" />
-            <input
-                type="password"
-                id="password"
-                claSS="login-item login-input"
-                placeholder="Password"
-            />
-            <button class="submit login-item">Login</button>
-            <script src="/javascripts/login.js"></script>
+        <div id="background-logo" />
+        <div class="login-container">
+            <div class="login">
+                <h1>Login</h1>
+                <input type="text" id="username" class="login-item login-input" placeholder="Username"/>
+                <input
+                    type="password"
+                    id="password"
+                    class="login-item login-input"
+                    placeholder="Password"
+                />
+                <button class="submit login-item">Login</button>
+                <script src="/javascripts/login.js"></script>
+            </div>
         </div>
     </body>
 </html>
