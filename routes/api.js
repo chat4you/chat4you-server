@@ -1,16 +1,17 @@
 var express = require("express");
 var router = express.Router();
 const utils = require("../utils");
-const cfg = require("../config");
+const fs = require("fs");
 
 const auths = new (require("../auth"))();
+
+var ignore = /\/?(login|image\/\d+)/; // RegEx for urls without authentication
 
 module.exports = (io) => {
     router.use((req, res, next) => {
         if (req.session.login) {
             next();
-        } else if (req.url == "/login") {
-            console.log(`allowing no login for ${req.url}`);
+        } else if (ignore.test(req.url)) {
             next();
         } else {
             console.log(req.url);
@@ -26,7 +27,7 @@ module.exports = (io) => {
         } else {
             req.session.login = true;
             req.session.name = req.body.username;
-            req.session.fullname = result.userData.fullname;
+            req.session.userData = result.userData;
             res.cookie("Auth", result.cookieAuth);
             res.cookie("Verify", result.cookieVerify);
             console.log(`User ${req.body.username} logged in succesfully.`);
@@ -38,6 +39,15 @@ module.exports = (io) => {
         delete req.session.login;
         auths.logout(req.cookies.Auth, req.cookies.Verify, (status) => {});
         res.redirect("/");
+    });
+
+    router.get("/profile-image/:id", (req, res) => {
+        let fpath = `data/images/${parseInt(req.params.id)}.png`;
+        if (!fs.existsSync(fpath)) {
+            fpath = "data/images/default.png";
+        }
+        let readStream = fs.createReadStream(fpath);
+        readStream.pipe(res);
     });
 
     io.on("connection", async (socket) => {

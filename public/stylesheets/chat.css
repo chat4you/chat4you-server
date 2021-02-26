@@ -58,6 +58,8 @@ h1 {
     align-items: center;
     justify-content: space-evenly;
     border-bottom: 1px solid var(--main-color);
+    padding-left: 5px;
+    padding-right: 5px;
 }
 
 .message-container {
@@ -191,54 +193,12 @@ h1 {
 }
 
 .add-contact {
-    display: block;
-    visibility: hidden;
-    position: absolute;
-    top: 10%;
-    right: 20%;
-    left: 20%;
-}
-
-.hide-background {
-    display: none;
-    visibility: hidden;
-    position: fixed;
-    top: 0px;
-    bottom: 0px;
-    left: 0px;
-    right: 0px;
-    z-index: 1;
-    background-color: rgba(128, 128, 128, 0.5);
-}
-
-.hide-background.visible {
-    display: block;
-    visibility: visible;
-}
-
-.add-contact-content {
-    position: relative;
-    padding: 20px;
-    background-color: var(--background);
-    z-index: 2;
-    display: flex;
-    border: 1px solid var(--main-color);
-    transform: translateY(20px);
-    opacity: 0;
-    transition: transform 0.2s ease-out, opacity 0.2s ease-out;
-}
-
-.add-contact.visible {
-    visibility: visible;
-}
-
-.add-contact.visible .add-contact-content {
-    transform: translateY(0px);
-    opacity: 1;
+    display: flex !important;
 }
 
 #add-contact-input {
     flex: 1 0;
+    margin-right: 5px;
 }
 
 .contact-list {
@@ -320,25 +280,6 @@ h1 {
 
 /* Edit profile */
 
-.edit-profile {
-    position: absolute;
-    display: none;
-    visibility: hidden;
-    top: 10%;
-    bottom: 10%;
-    right: 30%;
-    left: 30%;
-    background-color: var(--background);
-    box-shadow: 10px 10px 20px var(--shadow-color);
-    padding: 15px;
-    z-index: 2;
-}
-
-.edit-profile.visible {
-    display: block;
-    visibility: visible;
-}
-
 #edit-profile-table {
     width: 100%;
     text-align: left;
@@ -347,7 +288,6 @@ h1 {
 
 #edit-profile-table th {
     padding: 5px;
-    border: 1px solid rgba(128, 128, 128, 0.5);
 }
 
 #edit-profile-table th * {
@@ -413,6 +353,41 @@ h1 {
     color: black;
 }
 
+/* Dialogs */
+.dialogs {
+    display: flex;
+    justify-content: center;
+    position: fixed;
+    top: 0px;
+    bottom: 0px;
+    right: 0px;
+    left: 0px;
+    visibility: hidden;
+    z-index: 1;
+    background-color: rgba(128, 128, 128, 0.5);
+}
+
+.dialogs.active {
+    visibility: visible;
+}
+
+.dialog {
+    position: absolute;
+    top: 10%;
+    z-index: 2;
+    display: none;
+    visibility: hidden;
+    background-color: var(--background);
+    box-shadow: 10px 10px 20px var(--shadow-color);
+    padding: 15px;
+}
+
+.dialog.active {
+    visibility: visible;
+    display: block;
+    animation: fadeIn 0.2s linear 0s 1;
+}
+
 /* Animation keyframes */
 
 @keyframes fadeIn {
@@ -466,6 +441,10 @@ h1 {
     #back2menu {
         display: none;
         visibility: hidden;
+    }
+
+    .dialog {
+        min-width: 70%;
     }
 }
 
