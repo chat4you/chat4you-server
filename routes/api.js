@@ -1,16 +1,19 @@
 var express = require("express");
 var router = express.Router();
 const utils = require("../utils");
-const cfg = require("../config");
+const fs = require("fs");
+const sharp = require("sharp");
+const { sanitize } = require("../utils");
 
 const auths = new (require("../auth"))();
+
+var ignore = /^\/?(login|profile-image\/\d+)/; // RegEx for urls without authentication
 
 module.exports = (io) => {
     router.use((req, res, next) => {
         if (req.session.login) {
             next();
-        } else if (req.url == "/login") {
-            console.log(`allowing no login for ${req.url}`);
+        } else if (ignore.test(req.url)) {
             next();
         } else {
             console.log(req.url);
@@ -26,7 +29,7 @@ module.exports = (io) => {
         } else {
             req.session.login = true;
             req.session.name = req.body.username;
-            req.session.fullname = result.userData.fullname;
+            req.session.userData = result.userData;
             res.cookie("Auth", result.cookieAuth);
             res.cookie("Verify", result.cookieVerify);
             console.log(`User ${req.body.username} logged in succesfully.`);
@@ -38,6 +41,65 @@ module.exports = (io) => {
         delete req.session.login;
         auths.logout(req.cookies.Auth, req.cookies.Verify, (status) => {});
         res.redirect("/");
+    });
+
+    router.post("/me/profile-update", async (req, res) => {
+        // verifiy data
+        if (req.body.fullname.length <= 3 || /\s/i.test(req.body.fullname)) {
+            res.render("error", {
+                message: "Invalid input",
+                error: {
+                    status:
+                        "Bad full name (length < 4 or/and contains only whitespaces)",
+                    stack: "",
+                },
+            });
+        } else if (!/^\S{3,}@\S{1,}\.\S{2,}$/i.test(req.body.email)) {
+            res.render("error", {
+                message: "Invalid input",
+                error: {
+                    status: "Bad email",
+                    stack: "",
+                },
+            });
+        } else {
+            let fileBuffer = fs.readFileSync(req.body.profileImage.path);
+            if (fileBuffer.length != 0) {
+                await sharp(fileBuffer)
+                    .resize(300, 300)
+                    .toFile(`data/images/${req.session.userData.id}.png`);
+            }
+            let user = req.session.userData;
+            user.fullname = req.body.fullname;
+            user.email = req.body.email;
+            res.redirect("/");
+        }
+    });
+
+    router.get("/profile-image/:type/:id", async (req, res) => {
+        let id;
+        switch (req.params.type) {
+            case "id":
+                id = parseInt(req.params.id);
+                break;
+            case "name":
+                let user = await auths.getUser(sanitize(req.params.id));
+                id = user.id;
+                break;
+            default:
+                break;
+        }
+        let fpath = `data/images/${id}.png`;
+        if (!fs.existsSync(fpath)) {
+            fpath = "data/images/default.png";
+        }
+        let readStream = fs.createReadStream(fpath);
+        readStream.pipe(res);
+    });
+
+    router.get("/me/contacts", async (req, res) => {
+        let contacts = await auths.getContacts(req.session.userData.name);
+        res.json(contacts);
     });
 
     io.on("connection", async (socket) => {
@@ -111,14 +173,6 @@ module.exports = (io) => {
             }
         });
 
-        socket.on("contacts", async () => {
-            let contacts = await auths.getContacts(socket.name);
-            socket.emit("contacts", {
-                status: contacts ? "succes" : "error",
-                result: contacts,
-            });
-        });
-
         socket.on("requestContacts", async (data) => {
             data.other = utils.sanitize(data.other);
             switch (
@@ -140,16 +194,9 @@ module.exports = (io) => {
                             let response = await auths.createConverssation(
                                 conversation
                             );
-                            if (!response.err) {
-                                socket.emit("requestContacts", {
-                                    status: "succes",
-                                });
-                            } else {
-                                socket.emit("requestContacts", {
-                                    status: "error",
-                                    error: "Database error",
-                                });
-                            }
+                            socket.emit("requestContacts", {
+                                status: "succes",
+                            });
                         } else {
                             socket.emit("requestContacts", {
                                 status: "error",

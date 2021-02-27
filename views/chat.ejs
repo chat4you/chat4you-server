@@ -6,6 +6,17 @@
         <link rel="stylesheet" href="/stylesheets/main.css" />
         <link rel="shortcut icon" href="/images/logo.svg" type="image/x-icon" />
         <title>Chat</title>
+        <!-- Profile image needs to get id from rendering engine -->
+        <style>
+            .profile-image {
+                height: 30px;
+                width: 30px !important;
+                border-radius: 15px;
+                background-image: url("/api/profile-image/id/<%= data.id %>");
+                background-size: cover;
+                background-repeat: no-repeat;
+            }
+        </style>
     </head>
     <body>
         <div id="content">
@@ -49,7 +60,8 @@
             </div>
             <div class="navigation">
                 <div class="header">
-                    <h1 id="profile-name"><%= fullname %></h1>
+                    <div class="profile-image"></div>
+                    <h1 id="profile-name"><%= data.fullname %></h1>
                     <button id="logout">Logout</button>
                 </div>
                 <div class="contacts">
@@ -63,42 +75,76 @@
                     <div class="contact-list"></div>
                 </div>
             </div>
-            <div class="add-contact">
-                <div class="add-contact-content">
-                    <input
-                        type="text"
-                        id="add-contact-input"
-                        placeholder="Enter the exact uername"
-                    /><button id="add-contact-enter">Request</button>
-                </div>
-            </div>
-            <div class="edit-profile">
-                <h2>Edit Profile</h2>
-                <table id="edit-profile-table">
-                    <tr>
-                        <th><label for="name-edit">Name:</label></th>
-                        <th>
-                            <input type="text" id="name-edit" />
-                        </th>
-                    </tr>
-                    <tr>
-                        <th><label for="email-edit">E-mail:</label></th>
-                        <th>
-                            <input type="text" id="email-edit" />
-                        </th>
-                    </tr>
-                    <tr>
-                        <th colspan="2">
-                            <button type="submit" id="save-profile">
-                                Save
-                            </button>
-                        </th>
-                    </tr>
-                </table>
-            </div>
+
             <div class="hide-background"></div>
             <script src="/socket.io/socket.io.js"></script>
             <script src="/javascripts/chat.js"></script>
+        </div>
+        <div class="dialogs">
+            <div class="edit-profile dialog">
+                <h2>Edit Profile</h2>
+                <form
+                    enctype="multipart/form-data"
+                    action="/api/me/profile-update"
+                    name="editProfile"
+                    onsubmit="return(validateProfile())"
+                    method="POST"
+                >
+                    <table id="edit-profile-table">
+                        <tr>
+                            <th>
+                                <label for="profile-upload">
+                                    <div class="profile-image"></div>
+                                </label>
+                            </th>
+                            <th>
+                                <input
+                                    type="file"
+                                    id="profile-upload"
+                                    name="profileImage"
+                                />
+                            </th>
+                        </tr>
+                        <tr>
+                            <th><label for="name-edit">Full Name:</label></th>
+                            <th>
+                                <input
+                                    type="text"
+                                    id="name-edit"
+                                    name="fullname"
+                                    value="<%= data.fullname %>"
+                                />
+                            </th>
+                        </tr>
+                        <tr>
+                            <th><label for="email-edit">E-mail:</label></th>
+                            <th>
+                                <input
+                                    type="text"
+                                    id="email-edit"
+                                    name="email"
+                                    value="<%= data.email %>"
+                                />
+                            </th>
+                        </tr>
+                        <tr>
+                            <th colspan="2">
+                                <button type="submit" id="save-profile">
+                                    Save
+                                </button>
+                            </th>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+            <div class="add-contact dialog">
+                <input
+                    type="text"
+                    id="add-contact-input"
+                    placeholder="Enter the exact uername"
+                    autofocus
+                /><button id="add-contact-enter">Request</button>
+            </div>
         </div>
     </body>
 </html>

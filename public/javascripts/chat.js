@@ -1,6 +1,42 @@
 var cssQuery = (query) => {
     return document.querySelector(query);
 };
+
+class Dialog {
+    constructor(dialogQuery) {
+        this.parrent = cssQuery(".dialogs");
+        this.dialog = cssQuery(dialogQuery);
+        this.visible = false;
+        if (!this.parrent.hasChildNodes(this.dialog)) {
+            throw new Error(`Dialog ${dialogQuery} is not a child of .dialogs`);
+        }
+        this.parrent.addEventListener("click", (e) => {
+            if (e.target == this.parrent) {
+                this.hide();
+            }
+        });
+    }
+
+    show() {
+        this.parrent.querySelector(".active")?.classList.remove("active");
+        if (!this.parrent.classList.contains("active")) {
+            this.parrent.classList.add("active");
+        }
+        this.dialog.classList.add("active");
+        this.visible = true;
+    }
+
+    hide() {
+        this.dialog.classList.remove("active");
+        this.parrent.classList.remove("active");
+        this.visible = false;
+    }
+
+    toogle() {
+        this.visible ? this.hide() : this.show();
+    }
+}
+
 class Notify {
     constructor() {
         this.activeMessages = [];
@@ -113,28 +149,17 @@ class ContactManager {
         this.contactContainers = cssQuery(".contact-list");
         this.socket = socket;
         this.notificator = new Notify();
+        fetch(`/api/me/contacts`)
+            .then((data) => data.json())
+            .then((data) => {
+                data.forEach((contact) => {
+                    this.addContact(contact);
+                });
+            });
         this.initSocket();
     }
 
     async initSocket() {
-        await new Promise((done) => {
-            this.socket.on("contacts", (contacts) => {
-                if (contacts.status == "succes") {
-                    contacts.result.forEach((contact) => {
-                        this.addContact(contact);
-                        done();
-                    });
-                } else {
-                    this.notificator.addNotification(
-                        "Error!",
-                        "Error getting contacts",
-                        9e3,
-                        "error"
-                    );
-                }
-            });
-            this.socket.emit("contacts");
-        });
         this.socket.on("getMessages", (data) => {
             if (data.status == "succes") {
                 if (!this.contacts[data.id].gotMessages) {
@@ -202,7 +227,6 @@ class ContactManager {
         var title = document.createElement("h3");
         var subTitle = document.createElement("h6");
         var profile = document.createElement("div");
-        var profileImage = document.createElement("img");
         var other;
         if (contact.type == "chat") {
             other =
@@ -213,6 +237,7 @@ class ContactManager {
             title.innerHTML = fname;
             subTitle.innerHTML = other;
             this.contacts[contact.id].name = title.innerHTML;
+            profile.style.backgroundImage = `url('/api/profile-image/name/${other}')`;
         } else {
             title.innerHTML = contact.name;
         }
@@ -300,12 +325,12 @@ async function Chat() {
     let contacts = new ContactManager(me, socket);
     let messageInput = cssQuery("#input-message");
     let addContactButton = cssQuery(".add-contact-button");
-    let requestContactDiv = cssQuery(".add-contact");
-    let requestContactButton = cssQuery("#add-contact-enter");
-    let requestContactInput = cssQuery("#add-contact-input");
+    let editProfileDialog = new Dialog(".edit-profile");
+    let requestContactDialog = new Dialog(".add-contact");
+    requestContactDialog.button = cssQuery("#add-contact-enter");
+    requestContactDialog.input = cssQuery("#add-contact-input");
     let sendBtn = cssQuery("#send");
     let hideBackground = cssQuery(".hide-background");
-    let currentDialog;
     sendBtn.addEventListener("click", () => {
         if (/\S/i.test(messageInput.value)) {
             let message = {
@@ -326,28 +351,19 @@ async function Chat() {
     });
 
     addContactButton.addEventListener("click", () => {
-        if (requestContactDiv.classList.contains("visible")) {
-            requestContactDiv.classList.remove("visible");
-        } else {
-            requestContactDiv.classList.add("visible");
-            requestContactInput.value = "";
-            currentDialog = requestContactDiv;
-            hideBackground.classList.add("visible");
-            requestContactInput.click();
-        }
+        requestContactDialog.toogle();
+        requestContactDialog.input.value = "";
+        requestContactDialog.input.focus();
     });
 
-    hideBackground.addEventListener("click", () => {
-        currentDialog.classList.remove("visible");
-        hideBackground.classList.remove("visible");
-    });
-
-    requestContactButton.addEventListener("click", () => {
+    requestContactDialog.button.addEventListener("click", () => {
         // Request the user
-        if (/\S/i.test(requestContactInput.value)) {
-            contacts.requestContact(requestContactInput.value).then(() => {
-                hideBackground.click();
-            });
+        if (/\S/i.test(requestContactDialog.input.value)) {
+            contacts
+                .requestContact(requestContactDialog.input.value)
+                .then(() => {
+                    requestContactDialog.hide();
+                });
         }
         // Close
     });
@@ -358,12 +374,25 @@ async function Chat() {
     });
 
     cssQuery("#profile-name").addEventListener("click", () => {
-        cssQuery(".edit-profile").classList.add("visible");
-        cssQuery(".hide-background").classList.add("visible");
-        currentDialog = cssQuery(".edit-profile");
+        editProfileDialog.show();
     });
     cssQuery("#back2menu").addEventListener("click", () => {
         cssQuery(".messages").classList.remove("show");
     });
 }
+
+function validateProfile() {
+    let form = document.forms.editProfile;
+    console.log("validating form");
+    if (form.fullname.value.length <= 3 || /\s/i.test(form.fullname.value)) {
+        console.log(false);
+        return false;
+    } else if (!/^\S{3,}@\S{1,}\.\S{2,}$/i.test(form.email.value)) {
+        console.log(false);
+
+        return false;
+    }
+    return true;
+}
+
 Chat();
