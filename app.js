@@ -1,5 +1,7 @@
 var http = require("http");
 const createError = require("http-errors");
+const formData = require("express-form-data");
+const os = require("os");
 const express = require("express");
 const path = require("path");
 const cookieParser = require("cookie-parser");
@@ -11,6 +13,16 @@ const cfg = require("./config");
 const app = express();
 app.set("port", cfg.port);
 var server = http.createServer(app).listen(cfg.port);
+
+// form data configuration
+const formOpts = {
+    uploadDir: __dirname + "/uploads",
+    autoClean: true,
+};
+app.use(formData.parse(formOpts));
+app.use(formData.stream());
+app.use(formData.format());
+app.use(formData.union());
 
 // setup socket.io
 const io = require("socket.io")(server);

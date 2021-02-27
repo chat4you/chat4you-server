@@ -225,6 +225,8 @@ h1 {
     width: 50px;
     border-radius: 25px;
     box-shadow: 0 0 5px var(--shadow-color) inset;
+    background-repeat: no-repeat;
+    background-size: cover;
     overflow: hidden;
 }
 

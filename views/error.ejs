@@ -4,11 +4,33 @@
         <meta charset="UTF-8" />
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Document</title>
+        <title>Error !!!</title>
+        <link rel="stylesheet" href="/stylesheets/main.css" />
+        <style>
+            body {
+                background-color: darkred;
+            }
+            h1 {
+                width: 100%;
+                text-align: center;
+            }
+
+            h2 {
+                width: 100%;
+                padding: 10px;
+            }
+
+            button {
+                border: none;
+                padding: 10px;
+                cursor: pointer;
+            }
+        </style>
     </head>
     <body>
         <h1><%= message %></h1>
         <h2><%= error.status%></h2>
         <pre><%= error.stack %></pre>
+        <a href="/"><button>Back</button></a>
     </body>
 </html>

@@ -74,7 +74,10 @@ class Authmanager {
     }
 
     verify(cookieAuth, cookieVerify) {
-        if (hash(cookieAuth, cfg.secret) == cookieVerify) {
+        if (
+            hash(cookieAuth, cfg.secret) == cookieVerify &&
+            this.loginsByCookie[cookieAuth]
+        ) {
             return true;
         } else {
             return false;
@@ -202,8 +205,8 @@ class Authmanager {
         }
     }
 
-    async getUser(user) {
-        return await Users.findOne({ where: { name: user } });
+    async getUser(name) {
+        return await Users.findOne({ where: { name: name } });
     }
 
     async createConverssation(conversation) {

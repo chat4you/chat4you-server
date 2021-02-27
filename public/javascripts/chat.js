@@ -149,28 +149,17 @@ class ContactManager {
         this.contactContainers = cssQuery(".contact-list");
         this.socket = socket;
         this.notificator = new Notify();
+        fetch(`/api/me/contacts`)
+            .then((data) => data.json())
+            .then((data) => {
+                data.forEach((contact) => {
+                    this.addContact(contact);
+                });
+            });
         this.initSocket();
     }
 
     async initSocket() {
-        await new Promise((done) => {
-            this.socket.on("contacts", (contacts) => {
-                if (contacts.status == "succes") {
-                    contacts.result.forEach((contact) => {
-                        this.addContact(contact);
-                        done();
-                    });
-                } else {
-                    this.notificator.addNotification(
-                        "Error!",
-                        "Error getting contacts",
-                        9e3,
-                        "error"
-                    );
-                }
-            });
-            this.socket.emit("contacts");
-        });
         this.socket.on("getMessages", (data) => {
             if (data.status == "succes") {
                 if (!this.contacts[data.id].gotMessages) {
@@ -238,7 +227,6 @@ class ContactManager {
         var title = document.createElement("h3");
         var subTitle = document.createElement("h6");
         var profile = document.createElement("div");
-        var profileImage = document.createElement("img");
         var other;
         if (contact.type == "chat") {
             other =
@@ -249,6 +237,7 @@ class ContactManager {
             title.innerHTML = fname;
             subTitle.innerHTML = other;
             this.contacts[contact.id].name = title.innerHTML;
+            profile.style.backgroundImage = `url('/api/profile-image/name/${other}')`;
         } else {
             title.innerHTML = contact.name;
         }
@@ -391,4 +380,19 @@ async function Chat() {
         cssQuery(".messages").classList.remove("show");
     });
 }
+
+function validateProfile() {
+    let form = document.forms.editProfile;
+    console.log("validating form");
+    if (form.fullname.value.length <= 3 || /\s/i.test(form.fullname.value)) {
+        console.log(false);
+        return false;
+    } else if (!/^\S{3,}@\S{1,}\.\S{2,}$/i.test(form.email.value)) {
+        console.log(false);
+
+        return false;
+    }
+    return true;
+}
+
 Chat();
