@@ -1,6 +1,6 @@
 #content {
     display: flex;
-    height: 100vh;
+    height: 100%;
     max-width: 100%;
 }
 
@@ -42,11 +42,11 @@ h1 {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    background: var(--background);
 }
 
 .navigation {
     position: relative;
-    z-index: 1;
     display: flex;
     flex-direction: column;
     background-color: var(--background-lite);
@@ -145,7 +145,7 @@ h1 {
 
 #input-message {
     flex: 1 1 auto;
-    margin-left: 5px;
+    margin-right: 5px;
     overflow-y: auto;
 }
 
@@ -224,7 +224,7 @@ h1 {
     height: 50px;
     width: 50px;
     border-radius: 25px;
-    box-shadow: 0 0 5px var(--shadow-color) inset;
+    box-shadow: 2.5px 1.5px 10px var(--shadow-color);
     background-repeat: no-repeat;
     background-size: cover;
     overflow: hidden;
@@ -305,7 +305,8 @@ h1 {
     width: 30%;
     padding: 5px;
     min-height: 0;
-    max-height: 60vh;
+    z-index: 10;
+    max-height: 60%;
     overflow-x: hidden;
     overflow-y: auto;
 }
@@ -321,7 +322,7 @@ h1 {
     animation: fadeIn 0.3s linear;
     animation-fill-mode: forwards;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-    z-index: 3;
+    z-index: 10;
 }
 
 .notification.closing {
@@ -390,6 +391,41 @@ h1 {
     animation: fadeIn 0.2s linear 0s 1;
 }
 
+/* Statusbar */
+.statusbar {
+    display: flex;
+    position: absolute;
+    bottom: 0px;
+    height: 30px;
+    width: 100%;
+    padding: 5px;
+    border-top: 1px solid var(--main-color);
+}
+
+.statusbar > :first-child {
+    border-left: none !important;
+}
+
+.statusbar .item {
+    flex: 1 0;
+    vertical-align: middle;
+    border-left: 1px solid var(--main-color);
+}
+
+#connection-status {
+    position: absolute;
+    background: url("/images/disconnected.svg");
+    background-size: cover;
+    margin-left: 5px;
+    height: 19px;
+    width: 19px;
+}
+
+#connection-status.online {
+    background: url("/images/connected.svg");
+    background-size: cover;
+}
+
 /* Animation keyframes */
 
 @keyframes fadeIn {
@@ -437,6 +473,7 @@ h1 {
     }
     .navigation {
         border-left: 1px solid var(--main-color);
+        z-index: 1;
         flex: 0 0 30%;
     }
 
@@ -462,7 +499,7 @@ h1 {
     }
 
     .messages {
-        height: 100vh;
+        height: 100%;
         width: 100vw;
         transform: translateX(-100vw);
         z-index: 1;

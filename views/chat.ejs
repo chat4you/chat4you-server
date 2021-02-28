@@ -22,7 +22,7 @@
         <div id="content">
             <div class="messages">
                 <div class="messages-header">
-                    <h1 id="chat-name">Open a chat to comunicate</h1>
+                    <h1 id="chat-name">Welcome, <%= data.name %>!</h1>
                     <button id="back2menu">
                         <svg
                             xmlns:svg="http://www.w3.org/2000/svg"
@@ -51,11 +51,8 @@
                 </div>
                 <div class="message-container"></div>
                 <div class="message-input">
-                    <button id="send" disabled="disabled">Send</button
-                    ><textarea
-                        id="input-message"
-                        disabled="disabled"
-                    ></textarea>
+                    <textarea id="input-message" disabled="disabled"></textarea
+                    ><button id="send" disabled="disabled">Send</button>
                 </div>
             </div>
             <div class="navigation">
@@ -74,11 +71,13 @@
                     </div>
                     <div class="contact-list"></div>
                 </div>
+                <div class="statusbar">
+                    <div class="item">
+                        <span>Connection:</span>
+                        <i id="connection-status"></i>
+                    </div>
+                </div>
             </div>
-
-            <div class="hide-background"></div>
-            <script src="/socket.io/socket.io.js"></script>
-            <script src="/javascripts/chat.js"></script>
         </div>
         <div class="dialogs">
             <div class="edit-profile dialog">
@@ -141,10 +140,16 @@
                 <input
                     type="text"
                     id="add-contact-input"
-                    placeholder="Enter the exact uername"
+                    placeholder="Enter the username"
                     autofocus
                 /><button id="add-contact-enter">Request</button>
             </div>
         </div>
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="/javascripts/notify.js"></script>
+        <script src="/javascripts/conversation.js"></script>
+        <script src="/javascripts/dialog.js"></script>
+        <script src="/javascripts/contact-manager.js"></script>
+        <script src="/javascripts/chat.js"></script>
     </body>
 </html>

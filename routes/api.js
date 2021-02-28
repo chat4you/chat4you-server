@@ -7,17 +7,18 @@ const { sanitize } = require("../utils");
 
 const auths = new (require("../auth"))();
 
-var ignore = /^\/?(login|profile-image\/\d+)/; // RegEx for urls without authentication
+var ignore = /^\/?(login)/; // RegEx for urls without authentication
 
 module.exports = (io) => {
     router.use((req, res, next) => {
-        if (req.session.login) {
-            next();
-        } else if (ignore.test(req.url)) {
+        if (
+            (req.session.login || ignore.test(req.url)) &&
+            (req.session.admin || !/^\/admin/.test(req.url))
+        ) {
             next();
         } else {
             console.log(req.url);
-            res.json({ status: "error", error: "not logged in" });
+            res.json({ status: "error", error: "Permission Error" });
         }
     });
 
@@ -25,22 +26,27 @@ module.exports = (io) => {
     router.post("/login", async (req, res) => {
         let result = await auths.login(req.body.username, req.body.password);
         if (result.status != "succes") {
-            console.log(result);
-        } else {
-            req.session.login = true;
-            req.session.name = req.body.username;
-            req.session.userData = result.userData;
-            res.cookie("Auth", result.cookieAuth);
-            res.cookie("Verify", result.cookieVerify);
-            console.log(`User ${req.body.username} logged in succesfully.`);
-            res.json({ login: true });
+            res.json({});
+        }
+        req.session.login = true;
+        req.session.admin = false;
+        req.session.name = req.body.username;
+        req.session.userData = result.userData;
+        res.cookie("Auth", result.cookieAuth);
+        res.cookie("Verify", result.cookieVerify);
+        console.log(`User ${req.body.username} logged in succesfully.`);
+        if (result.userData.type == "user") {
+            res.json({ login: "user" });
+        } else if (result.userData.type == "admin") {
+            req.session.admin = true;
+            res.json({ login: "admin" });
         }
     });
 
     router.get("/logout", (req, res) => {
-        delete req.session.login;
+        req.session.destroy();
         auths.logout(req.cookies.Auth, req.cookies.Verify, (status) => {});
-        res.redirect("/");
+        res.redirect("/login");
     });
 
     router.post("/me/profile-update", async (req, res) => {
@@ -65,9 +71,15 @@ module.exports = (io) => {
         } else {
             let fileBuffer = fs.readFileSync(req.body.profileImage.path);
             if (fileBuffer.length != 0) {
-                await sharp(fileBuffer)
-                    .resize(300, 300)
-                    .toFile(`data/images/${req.session.userData.id}.png`);
+                try {
+                    await sharp(fileBuffer)
+                        .resize(300, 300)
+                        .toFile(`data/images/${req.session.userData.id}.png`);
+                } catch {
+                    console.log(
+                        `${req.session.userData.name} uploaded some crap`
+                    );
+                }
             }
             let user = req.session.userData;
             user.fullname = req.body.fullname;

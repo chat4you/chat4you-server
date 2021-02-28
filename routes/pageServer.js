@@ -1,7 +1,15 @@
 var express = require("express");
 var router = express.Router();
 
-router.get("/", (req, res, next) => {
+router.get("/", (req, res) => {
+    res.render("home");
+});
+
+router.get("/login", function (req, res) {
+    res.render("login", { title: "Login to continue" });
+});
+
+router.get("/chat", (req, res) => {
     if (!req.session.login) {
         res.redirect("/login");
     } else {
@@ -9,10 +17,6 @@ router.get("/", (req, res, next) => {
             data: req.session.userData,
         });
     }
-});
-
-router.get("/login", function (req, res, next) {
-    res.render("login", { title: "Login to continue" });
 });
 
 module.exports = router;
