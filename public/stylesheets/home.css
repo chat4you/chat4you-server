@@ -37,7 +37,8 @@ nav {
     padding: 5px;
     display: flex;
     justify-content: space-between;
-    background-color: var(--background);
+    backdrop-filter: blur(5px);
+    background-color: var(--background-lite);
     box-shadow: 0px 5px 10px 5px var(--shadow-color);
 }
 
@@ -91,10 +92,14 @@ nav {
 }
 
 .info > div {
-    margin-top: 20px;
-    min-height: 150px;
+    margin-top: 10px;
+    min-height: 100px;
     width: 100%;
     display: flex;
+}
+
+.info > div:first-child {
+    margin-top: 0px;
 }
 
 .info > div > :first-child {
@@ -111,8 +116,6 @@ nav {
 .info > div > :last-child {
     padding: 20px;
     text-align: center;
-    word-break: keep-all;
-    word-wrap: break-word;
     background-color: var(--background-lite);
     box-shadow: 0px 0px 5px 5px var(--background-lite);
     flex: 1 1 60%;

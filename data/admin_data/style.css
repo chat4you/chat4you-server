@@ -1,0 +1,73 @@
+.content {
+    display: flex;
+    flex-direction: column;
+    padding: 5px;
+    width: 100%;
+}
+
+.intro {
+    text-align: center;
+    margin: 15px;
+}
+
+button {
+    border: 1px solid var(--main-color);
+    padding: 5px;
+    border-radius: 2px;
+    color: var(--main-color);
+    background: var(--background);
+    transition: all 0.2s ease-in-out;
+}
+
+button:hover {
+    color: var(--background);
+    background: var(--main-color);
+}
+
+.actions {
+    display: flex;
+    flex: 1 0 20%;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.table-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1 0 80%;
+    border-top: var(--main-color);
+}
+
+.users {
+    margin-top: 20px;
+}
+
+.users tbody {
+    text-align: left;
+    border-collapse: collapse;
+    border: 1px solid var(--main-color);
+    border-radius: 10px;
+    box-shadow: 5px 5px 10px -5px var(--shadow-color),
+        0 0 20px var(--shadow-color);
+}
+
+.users input {
+    border: none;
+    width: 100%;
+}
+
+.users th {
+    padding: 5px;
+    text-align: center;
+}
+
+.delete-user {
+    border: 1px solid red;
+    background-color: red;
+}
+
+.delete-user:hover {
+    color: red;
+    background: transparent;
+}

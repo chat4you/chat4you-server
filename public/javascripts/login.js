@@ -29,10 +29,8 @@ submit.onclick = (e) => {
         server.onreadystatechange = () => {
             if (server.readyState == 4 && server.status == 200) {
                 var decoded = JSON.parse(server.responseText);
-                if (decoded.login == "user") {
-                    document.location.href = "/chat";
-                } else if (decoded.login == "admin") {
-                    document.location.href = "/administration";
+                if (decoded.login) {
+                    document.location.href = decoded.nextPage;
                 } else {
                     password.classList.add("invalid");
                     username.classList.add("invalid");

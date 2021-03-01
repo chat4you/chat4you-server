@@ -33,7 +33,7 @@ class Authmanager {
         if (user) {
             var randomString = radnStr(50);
             var hashOfString = hash(randomString, cfg.secret);
-            delete user.password_hash; // Hide sensitive information
+            delete user.password_hash; // Hide important information
             this.loginsByCookie[randomString] = {
                 username: username,
                 userData: user,

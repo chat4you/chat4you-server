@@ -9,6 +9,8 @@ const auths = new (require("../auth"))();
 
 var ignore = /^\/?(login)/; // RegEx for urls without authentication
 
+var usersBySession = {};
+
 module.exports = (io) => {
     router.use((req, res, next) => {
         if (
@@ -32,18 +34,20 @@ module.exports = (io) => {
         req.session.admin = false;
         req.session.name = req.body.username;
         req.session.userData = result.userData;
+        usersBySession[req.session.id] = result.userData;
         res.cookie("Auth", result.cookieAuth);
         res.cookie("Verify", result.cookieVerify);
         console.log(`User ${req.body.username} logged in succesfully.`);
         if (result.userData.type == "user") {
-            res.json({ login: "user" });
+            res.json({ login: true, nextPage: "/chat" });
         } else if (result.userData.type == "admin") {
             req.session.admin = true;
-            res.json({ login: "admin" });
+            res.json({ login: true, nextPage: "/administration" });
         }
     });
 
     router.get("/logout", (req, res) => {
+        delete usersBySession[req.session.id];
         req.session.destroy();
         auths.logout(req.cookies.Auth, req.cookies.Verify, (status) => {});
         res.redirect("/login");
@@ -74,17 +78,25 @@ module.exports = (io) => {
                 try {
                     await sharp(fileBuffer)
                         .resize(300, 300)
-                        .toFile(`data/images/${req.session.userData.id}.png`);
+                        .toFile(
+                            `data/images/${
+                                usersBySession[req.session.id].id
+                            }.png`
+                        );
                 } catch {
                     console.log(
-                        `${req.session.userData.name} uploaded some crap`
+                        `${
+                            usersBySession[req.session.id].name
+                        } uploaded some crap`
                     );
                 }
             }
-            let user = req.session.userData;
+            let user = usersBySession[req.session.id];
             user.fullname = req.body.fullname;
             user.email = req.body.email;
-            res.redirect("/");
+            req.session.userData = user;
+            await user.save();
+            res.redirect("/chat");
         }
     });
 
@@ -110,7 +122,9 @@ module.exports = (io) => {
     });
 
     router.get("/me/contacts", async (req, res) => {
-        let contacts = await auths.getContacts(req.session.userData.name);
+        let contacts = await auths.getContacts(
+            usersBySession[req.session.id].name
+        );
         res.json(contacts);
     });
 

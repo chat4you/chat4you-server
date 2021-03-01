@@ -38,7 +38,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
-app.use(session({ secret: cfg.session_secret }));
+app.use(
+    session({
+        name: "chat.sid",
+        secret: cfg.session_secret,
+        resave: true,
+        store: new session.MemoryStore(),
+        saveUninitialized: true,
+    })
+);
 
 app.use("/api", apiRouter);
 app.use("/", pageRouter);
