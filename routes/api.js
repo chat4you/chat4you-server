@@ -4,6 +4,9 @@ const utils = require("../utils");
 const fs = require("fs");
 const sharp = require("sharp");
 const { sanitize } = require("../utils");
+const createError = require("http-errors");
+const Users = require("../models/users");
+const cfg = require("../config");
 
 const auths = new (require("../auth"))();
 
@@ -24,7 +27,7 @@ module.exports = (io) => {
         }
     });
 
-    // Login api
+    // Login
     router.post("/login", async (req, res) => {
         let result = await auths.login(req.body.username, req.body.password);
         if (result.status != "succes") {
@@ -46,6 +49,7 @@ module.exports = (io) => {
         }
     });
 
+    // Logout
     router.get("/logout", (req, res) => {
         delete usersBySession[req.session.id];
         req.session.destroy();
@@ -53,6 +57,7 @@ module.exports = (io) => {
         res.redirect("/login");
     });
 
+    // User profile update
     router.post("/me/profile-update", async (req, res) => {
         // verifiy data
         if (req.body.fullname.length <= 3 || /\s/i.test(req.body.fullname)) {
@@ -100,6 +105,7 @@ module.exports = (io) => {
         }
     });
 
+    // Profile images
     router.get("/profile-image/:type/:id", async (req, res) => {
         let id;
         switch (req.params.type) {
@@ -121,11 +127,36 @@ module.exports = (io) => {
         readStream.pipe(res);
     });
 
+    // User contacts
     router.get("/me/contacts", async (req, res) => {
         let contacts = await auths.getContacts(
             usersBySession[req.session.id].name
         );
         res.json(contacts);
+    });
+
+    // Admin user update
+    router.post("/update-admin/:id", async (req, res, next) => {
+        if (req.session.admin) {
+            let user = await Users.findByPk(parseInt(req.params.id));
+            if (user) {
+                if (/\S/.test(req.body.password)) {
+                    req.body.password_hash = utils.hash(
+                        req.body.password,
+                        cfg.secret
+                    );
+                }
+                delete req.body.password; // Passord column does not exist in database
+                try {
+                    await user.update(req.body);
+                    res.json({ status: "success" });
+                    return;
+                } catch (error) {}
+            }
+            res.json({ status: "error" });
+        } else {
+            next(createError(404));
+        }
     });
 
     io.on("connection", async (socket) => {

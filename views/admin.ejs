@@ -30,30 +30,28 @@
         <div class="table-container">
             <table class="users">
                 <% for (var i=0; i < users.length; i++){ %>
-                    <form action="/administration/update/<%= users[i].id %>" method="post">
-                        <tr>
-                            <th class="fullname">
-                                <input type="text" class="fullname-input" name="fullname" value="<%= users[i].fullname %>">
-                            </th>
-                            <th class="name">
-                                <input type="text" class="name-input" name="name" value="<%= users[i].name %>">
-                            </th>
-                            <th class="email">
-                                <input type="text" class="email-input" name="email" value="<%= users[i].email %>">
-                            </th>
-                            <th class="new-password"><input type="password" name="password" class="new-password-input" placeholder="Password"></th>
-                            <th class="verified">
-                                <select class="verified-select" name="verified">
-                                    <option value="true" <%=users[i].verified ? 'selected' : '' %>>True</option>
-                                    <option value="false" <%=users[i].verified ? '' : 'selected' %>>False</option>
-                                </select>
-                            </th>
-                            <th>
-                                <button class="save-user" name="save" type="submit">Save</button>
-                            </th>
-                            <th><button class="delete-user" name="delete" type="submit">Delete</button></th>
-                        </tr>
-                    </form>
+                    <tr data-user-id="<%= users[i].id %>" class="user-container">
+                        <th class="fullname">
+                            <input type="text" class="fullname-input" value="<%= users[i].fullname %>">
+                        </th>
+                        <th class="name">
+                            <input type="text" class="name-input" value="<%= users[i].name %>">
+                        </th>
+                        <th class="email">
+                            <input type="text" class="email-input" value="<%= users[i].email %>">
+                        </th>
+                        <th class="new-password"><input type="password" class="new-password-input" placeholder="Password"></th>
+                        <th class="verified">
+                            <select class="verified-select">
+                                <option value="true" <%=users[i].verified ? 'selected' : '' %>>True</option>
+                                <option value="false" <%=users[i].verified ? '' : 'selected' %>>False</option>
+                            </select>
+                        </th>
+                        <th>
+                            <button class="save-user">Save</button>
+                        </th>
+                        <th><button class="delete-user">Delete</button></th>
+                    </tr>
                     <% } %>
             </table>
         </div>
