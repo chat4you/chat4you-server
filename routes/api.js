@@ -42,7 +42,7 @@ module.exports = (io) => {
         res.cookie("Verify", result.cookieVerify);
         console.log(`User ${req.body.username} logged in succesfully.`);
         if (result.userData.type == "user") {
-            res.json({ login: true, nextPage: "/chat" });
+            res.json({ login: true, nextPage: "/" });
         } else if (result.userData.type == "admin") {
             req.session.admin = true;
             res.json({ login: true, nextPage: "/administration" });
@@ -101,7 +101,7 @@ module.exports = (io) => {
             user.email = req.body.email;
             req.session.userData = user;
             await user.save();
-            res.redirect("/chat");
+            res.redirect("/");
         }
     });
 
@@ -151,7 +151,7 @@ module.exports = (io) => {
                     await user.update(req.body);
                     res.json({ status: "success" });
                     return;
-                } catch (error) {}
+                } catch (error) {} //  do not return since the default response is error
             }
             res.json({ status: "error" });
         } else {

@@ -5,21 +5,15 @@ const Users = require("../models/users");
 const fs = require("fs");
 const path = require("path");
 
-router.get("/", (req, res) => {
-    res.render("home");
-});
-
 router.get("/login", function (req, res) {
     if (req.session.login) {
-        req.session.admin
-            ? res.redirect("/administration")
-            : res.redirect("/chat");
+        req.session.admin ? res.redirect("/administration") : res.redirect("/");
     } else {
         res.render("login", { title: "Login to continue" });
     }
 });
 
-router.get("/chat", (req, res) => {
+router.get("/", (req, res) => {
     if (!req.session.login) {
         res.redirect("/login");
     } else {
