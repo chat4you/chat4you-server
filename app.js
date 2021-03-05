@@ -28,7 +28,6 @@ app.use(formData.union());
 const io = require("socket.io")(server);
 
 const apiRouter = require("./routes/api")(io);
-const pageRouter = require("./routes/pageServer");
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
@@ -49,7 +48,6 @@ app.use(
 );
 
 app.use("/api", apiRouter);
-app.use("/", pageRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
