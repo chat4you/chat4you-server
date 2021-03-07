@@ -10,7 +10,7 @@ const cfg = require("../config");
 
 const auths = new (require("../auth"))();
 
-var ignore = /^\/?(login)/; // RegEx for urls without authentication
+var ignore = /^\/?(login|check-login)/; // RegEx for urls without authentication
 
 var usersBySession = {};
 
@@ -23,7 +23,7 @@ module.exports = (io) => {
             next();
         } else {
             console.log(req.url);
-            res.json({ status: "error", error: "Permission Error" });
+            res.json({ status: "error", error: "not logged in" });
         }
     });
 
@@ -55,6 +55,14 @@ module.exports = (io) => {
         req.session.destroy();
         auths.logout(req.cookies.Auth, req.cookies.Verify, (status) => {});
         res.redirect("/login");
+    });
+
+    router.get("/check-login", (req, res) => {
+        res.json({ login: req.session.login ? true : false });
+    });
+
+    router.get("/me", (req, res) => {
+        res.json(usersBySession[req.session.id]);
     });
 
     // User profile update
