@@ -12,5 +12,5 @@ assignees: pythonmaxi
 **What you tried**
 
 **System info**
- - OS (eg. Ubuntu)
- - NodeJS version (eg. 12)
+ - OS: [e.g. Ubuntu]
+ - NodeJS Version [e.g. 12]
