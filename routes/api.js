@@ -22,7 +22,6 @@ module.exports = (io) => {
         ) {
             next();
         } else {
-            console.log(req.url);
             res.json({ status: "error", error: "not logged in" });
         }
     });
@@ -31,7 +30,8 @@ module.exports = (io) => {
     router.post("/login", async (req, res) => {
         let result = await auths.login(req.body.username, req.body.password);
         if (result.status != "succes") {
-            res.json({});
+            res.json({ login: false });
+            return;
         }
         req.session.login = true;
         req.session.admin = false;
@@ -51,10 +51,12 @@ module.exports = (io) => {
 
     // Logout
     router.get("/logout", (req, res) => {
-        delete usersBySession[req.session.id];
+        try {
+            delete usersBySession[req.session.id];
+        } catch {}
         req.session.destroy();
-        auths.logout(req.cookies.Auth, req.cookies.Verify, (status) => {});
-        res.redirect("/login");
+        auths.logout(req.cookies.Auth, req.cookies.Verify);
+        res.send("logout");
     });
 
     router.get("/check-login", (req, res) => {

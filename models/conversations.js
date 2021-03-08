@@ -16,7 +16,7 @@ Conversations.init(
             type: DataTypes.TEXT,
         },
         members: {
-            type: DataTypes.ARRAY(DataTypes.TEXT),
+            type: DataTypes.ARRAY(DataTypes.INTEGER),
         },
         accepted: {
             type: DataTypes.ARRAY(DataTypes.BOOLEAN),

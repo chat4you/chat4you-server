@@ -8,9 +8,9 @@ const sequelize = require("./models/db");
 const Conversations = require("./models/conversations");
 const Messages = require("./models/messages");
 const Users = require("./models/users");
-Conversations.sync();
-Messages.sync();
-Users.sync();
+Conversations.sync({ alter: true });
+Messages.sync({ alter: true });
+Users.sync({ alter: true });
 
 class Authmanager {
     constructor() {
