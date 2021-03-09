@@ -5,10 +5,14 @@ const fs = require("fs");
 const sharp = require("sharp");
 const { sanitize } = require("../utils");
 const createError = require("http-errors");
-const Users = require("../models/users");
 const cfg = require("../config");
 
 const auths = new (require("../auth"))();
+
+const Conversations = require("../models/conversations");
+const Messages = require("../models/messages");
+const Users = require("../models/users");
+const { Op } = require("sequelize");
 
 var ignore = /^\/?(login|check-login)/; // RegEx for urls without authentication
 
@@ -139,9 +143,11 @@ module.exports = (io) => {
 
     // User contacts
     router.get("/me/contacts", async (req, res) => {
-        let contacts = await auths.getContacts(
-            usersBySession[req.session.id].name
-        );
+        let contacts = await Conversations.findAll({
+            where: {
+                members: { [Op.contains]: [usersBySession[req.session.id].id] },
+            },
+        });
         res.json(contacts);
     });
 
@@ -172,7 +178,7 @@ module.exports = (io) => {
     io.on("connection", async (socket) => {
         var socketType;
         await new Promise((resolve) => {
-            socket.on("auth", (data) => {
+            socket.on("auth", async (data) => {
                 var cookie = utils.cookieParser(data);
                 if (auths.verify(cookie.Auth, cookie.Verify)) {
                     socket.cookieAuth = cookie.Auth; // Save cookie for later
@@ -184,7 +190,8 @@ module.exports = (io) => {
                         status: "succes",
                         data: userData,
                     });
-                    auths.setStatus(socket.name, "online");
+                    (await Users.findOne({ where: { name: socket.name } }))
+                        .status == "offline";
                     auths.sockets[userData.name].push(socket);
                     resolve(); // Continue to next step
                 } else {
@@ -286,12 +293,12 @@ module.exports = (io) => {
         socket.on("fullnameOf", async (data) => {
             data.name ? (data.name = utils.sanitize(data.name)) : undefined;
             if (data.name && (await auths.hasContact(data.name, socket.name))) {
-                let fullName = await auths.getFullName(data.name);
-                if (fullName) {
+                let user = await Users.findOne({ where: { name: data.name } });
+                if (user.fullnaem) {
                     socket.emit("fullnameOf", {
                         status: "succes",
                         name: data.name,
-                        fullname: fullName,
+                        fullname: fullname,
                     });
                 } else {
                     socket.emit("fullnameOf", { status: "error" });
@@ -319,11 +326,12 @@ module.exports = (io) => {
             socket.emit("acceptReject", res);
         });
 
-        socket.on("disconnect", () => {
+        socket.on("disconnect", async () => {
             let socketArray = auths.sockets[socket.name];
             socketArray.splice(socketArray.indexOf(socket), 1);
             if (socketArray.length == 0) {
-                auths.setStatus(socket.name, "offline");
+                (await Users.findOne({ where: { name: socket.name } }))
+                    .status == "offline";
             }
             console.log("Socket disconnected");
         });
