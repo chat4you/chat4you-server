@@ -120,25 +120,23 @@ module.exports = (io) => {
     });
 
     // Profile images
-    router.get("/profile-image/:type/:id", async (req, res) => {
-        let id;
-        switch (req.params.type) {
-            case "id":
-                id = parseInt(req.params.id);
-                break;
-            case "name":
-                let user = await auths.getUser(sanitize(req.params.id));
-                id = user.id;
-                break;
-            default:
-                break;
-        }
+    router.get("/users/:user/profile-image/", async (req, res) => {
+        let id = parseInt(req.params.user);
         let fpath = `data/images/${id}.png`;
         if (!fs.existsSync(fpath)) {
             fpath = "data/images/default.png";
         }
         let readStream = fs.createReadStream(fpath);
         readStream.pipe(res);
+    });
+
+    router.get("/users/:user/fullname", async (req, res) => {
+        let user = await Users.findByPk(parseInt(req.params.user));
+        if (user) {
+            res.send(user.fullname);
+        } else {
+            res.send("--> ERROR <--");
+        }
     });
 
     // User contacts
