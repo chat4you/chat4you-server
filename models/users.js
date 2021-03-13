@@ -29,9 +29,6 @@ Users.init(
             type: DataTypes.BOOLEAN,
             defaultValue: false,
         },
-        prof_img: {
-            type: DataTypes.TEXT,
-        },
         status: {
             type: DataTypes.TEXT,
             defaultValue: "offline",

@@ -8,9 +8,9 @@ const sequelize = require("./models/db");
 const Conversations = require("./models/conversations");
 const Messages = require("./models/messages");
 const Users = require("./models/users");
-Conversations.sync();
-Messages.sync();
-Users.sync();
+Conversations.sync({ alter: true });
+Messages.sync({ alter: true });
+Users.sync({ alter: true });
 
 class Authmanager {
     constructor() {
@@ -33,7 +33,7 @@ class Authmanager {
         if (user) {
             var randomString = radnStr(50);
             var hashOfString = hash(randomString, cfg.secret);
-            delete user.password_hash; // Hide sensitive information
+            delete user.password_hash; // Hide important information
             this.loginsByCookie[randomString] = {
                 username: username,
                 userData: user,
@@ -104,13 +104,9 @@ class Authmanager {
         }
     }
 
-    async getConversation(id) {
-        return await Conversations.findOne({ where: { id: id } });
-    }
-
     async removeUserFromConversation(user, convId) {
         if (await this.userInConversation(user, convId)) {
-            let conv = await this.getConversation(convId);
+            let conv = await Conversations.findOne({ where: { id: convId } });
             if (conv.type == "chat") {
                 await Conversations.destroy({
                     where: { id: paresInt(convId) },
@@ -128,7 +124,7 @@ class Authmanager {
     async acceptConversation(user, convId) {
         if (await this.userInConversation(user, convId)) {
             console.log("accepting conversation..");
-            let conv = await this.getConversation(convId);
+            let conv = await Conversations.findOne({ where: { id: convId } });
             if (conv.type == "chat" || conv.type == "group") {
                 console.log(conv);
                 let accepted = conv.accepted; // Workaround since sequelize dosnet detect changes in array
@@ -145,17 +141,6 @@ class Authmanager {
             console.log("User in conversation");
             return { status: "error", error: "User not in conversation" };
         }
-    }
-
-    async getFullName(name) {
-        let user = await this.getUser(name);
-        return user.fullname;
-    }
-
-    async getContacts(name) {
-        return await Conversations.findAll({
-            where: { members: { [Op.contains]: [sanitize(name)] } },
-        });
     }
 
     async getMessages(convId, startTime) {
@@ -203,10 +188,6 @@ class Authmanager {
         } else {
             return false;
         }
-    }
-
-    async getUser(name) {
-        return await Users.findOne({ where: { name: name } });
     }
 
     async createConverssation(conversation) {

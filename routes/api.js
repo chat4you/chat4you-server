@@ -4,45 +4,74 @@ const utils = require("../utils");
 const fs = require("fs");
 const sharp = require("sharp");
 const { sanitize } = require("../utils");
+const createError = require("http-errors");
+const cfg = require("../config");
 
 const auths = new (require("../auth"))();
 
-var ignore = /^\/?(login|profile-image\/\d+)/; // RegEx for urls without authentication
+const Conversations = require("../models/conversations");
+const Messages = require("../models/messages");
+const Users = require("../models/users");
+const { Op } = require("sequelize");
+
+var ignore = /^\/?(login|check-login)/; // RegEx for urls without authentication
+
+var usersBySession = {};
 
 module.exports = (io) => {
     router.use((req, res, next) => {
-        if (req.session.login) {
-            next();
-        } else if (ignore.test(req.url)) {
+        if (
+            (req.session.login || ignore.test(req.url)) &&
+            (req.session.admin || !/^\/admin/.test(req.url))
+        ) {
             next();
         } else {
-            console.log(req.url);
             res.json({ status: "error", error: "not logged in" });
         }
     });
 
-    // Login api
+    // Login
     router.post("/login", async (req, res) => {
         let result = await auths.login(req.body.username, req.body.password);
         if (result.status != "succes") {
-            console.log(result);
-        } else {
-            req.session.login = true;
-            req.session.name = req.body.username;
-            req.session.userData = result.userData;
-            res.cookie("Auth", result.cookieAuth);
-            res.cookie("Verify", result.cookieVerify);
-            console.log(`User ${req.body.username} logged in succesfully.`);
-            res.json({ login: true });
+            res.json({ login: false });
+            return;
+        }
+        req.session.login = true;
+        req.session.admin = false;
+        req.session.name = req.body.username;
+        req.session.userData = result.userData;
+        usersBySession[req.session.id] = result.userData;
+        res.cookie("Auth", result.cookieAuth);
+        res.cookie("Verify", result.cookieVerify);
+        console.log(`User ${req.body.username} logged in succesfully.`);
+        if (result.userData.type == "user") {
+            res.json({ login: true, nextPage: "/" });
+        } else if (result.userData.type == "admin") {
+            req.session.admin = true;
+            res.json({ login: true, nextPage: "/administration" });
         }
     });
 
+    // Logout
     router.get("/logout", (req, res) => {
-        delete req.session.login;
-        auths.logout(req.cookies.Auth, req.cookies.Verify, (status) => {});
-        res.redirect("/");
+        try {
+            delete usersBySession[req.session.id];
+        } catch {}
+        req.session.destroy();
+        auths.logout(req.cookies.Auth, req.cookies.Verify);
+        res.send("logout");
     });
 
+    router.get("/check-login", (req, res) => {
+        res.json({ login: req.session.login ? true : false });
+    });
+
+    router.get("/me", (req, res) => {
+        res.json(usersBySession[req.session.id]);
+    });
+
+    // User profile update
     router.post("/me/profile-update", async (req, res) => {
         // verifiy data
         if (req.body.fullname.length <= 3 || /\s/i.test(req.body.fullname)) {
@@ -65,30 +94,34 @@ module.exports = (io) => {
         } else {
             let fileBuffer = fs.readFileSync(req.body.profileImage.path);
             if (fileBuffer.length != 0) {
-                await sharp(fileBuffer)
-                    .resize(300, 300)
-                    .toFile(`data/images/${req.session.userData.id}.png`);
+                try {
+                    await sharp(fileBuffer)
+                        .resize(300, 300)
+                        .toFile(
+                            `data/images/${
+                                usersBySession[req.session.id].id
+                            }.png`
+                        );
+                } catch {
+                    console.log(
+                        `${
+                            usersBySession[req.session.id].name
+                        } uploaded some crap`
+                    );
+                }
             }
-            let user = req.session.userData;
+            let user = usersBySession[req.session.id];
             user.fullname = req.body.fullname;
             user.email = req.body.email;
+            req.session.userData = user;
+            await user.save();
             res.redirect("/");
         }
     });
 
-    router.get("/profile-image/:type/:id", async (req, res) => {
-        let id;
-        switch (req.params.type) {
-            case "id":
-                id = parseInt(req.params.id);
-                break;
-            case "name":
-                let user = await auths.getUser(sanitize(req.params.id));
-                id = user.id;
-                break;
-            default:
-                break;
-        }
+    // Profile images
+    router.get("/users/:user/profile-image/", async (req, res) => {
+        let id = parseInt(req.params.user);
         let fpath = `data/images/${id}.png`;
         if (!fs.existsSync(fpath)) {
             fpath = "data/images/default.png";
@@ -97,15 +130,53 @@ module.exports = (io) => {
         readStream.pipe(res);
     });
 
+    router.get("/users/:user/fullname", async (req, res) => {
+        let user = await Users.findByPk(parseInt(req.params.user));
+        if (user) {
+            res.send(user.fullname);
+        } else {
+            res.send("--> ERROR <--");
+        }
+    });
+
+    // User contacts
     router.get("/me/contacts", async (req, res) => {
-        let contacts = await auths.getContacts(req.session.userData.name);
+        let contacts = await Conversations.findAll({
+            where: {
+                members: { [Op.contains]: [usersBySession[req.session.id].id] },
+            },
+        });
         res.json(contacts);
+    });
+
+    // Admin user update
+    router.post("/update-admin/:id", async (req, res, next) => {
+        if (req.session.admin) {
+            let user = await Users.findByPk(parseInt(req.params.id));
+            if (user) {
+                if (/\S/.test(req.body.password)) {
+                    req.body.password_hash = utils.hash(
+                        req.body.password,
+                        cfg.secret
+                    );
+                }
+                delete req.body.password; // Passord column does not exist in database
+                try {
+                    await user.update(req.body);
+                    res.json({ status: "success" });
+                    return;
+                } catch (error) {} //  do not return since the default response is error
+            }
+            res.json({ status: "error" });
+        } else {
+            next(createError(404));
+        }
     });
 
     io.on("connection", async (socket) => {
         var socketType;
         await new Promise((resolve) => {
-            socket.on("auth", (data) => {
+            socket.on("auth", async (data) => {
                 var cookie = utils.cookieParser(data);
                 if (auths.verify(cookie.Auth, cookie.Verify)) {
                     socket.cookieAuth = cookie.Auth; // Save cookie for later
@@ -117,7 +188,8 @@ module.exports = (io) => {
                         status: "succes",
                         data: userData,
                     });
-                    auths.setStatus(socket.name, "online");
+                    (await Users.findOne({ where: { name: socket.name } }))
+                        .status == "offline";
                     auths.sockets[userData.name].push(socket);
                     resolve(); // Continue to next step
                 } else {
@@ -219,12 +291,12 @@ module.exports = (io) => {
         socket.on("fullnameOf", async (data) => {
             data.name ? (data.name = utils.sanitize(data.name)) : undefined;
             if (data.name && (await auths.hasContact(data.name, socket.name))) {
-                let fullName = await auths.getFullName(data.name);
-                if (fullName) {
+                let user = await Users.findOne({ where: { name: data.name } });
+                if (user.fullnaem) {
                     socket.emit("fullnameOf", {
                         status: "succes",
                         name: data.name,
-                        fullname: fullName,
+                        fullname: fullname,
                     });
                 } else {
                     socket.emit("fullnameOf", { status: "error" });
@@ -252,11 +324,12 @@ module.exports = (io) => {
             socket.emit("acceptReject", res);
         });
 
-        socket.on("disconnect", () => {
+        socket.on("disconnect", async () => {
             let socketArray = auths.sockets[socket.name];
             socketArray.splice(socketArray.indexOf(socket), 1);
             if (socketArray.length == 0) {
-                auths.setStatus(socket.name, "offline");
+                (await Users.findOne({ where: { name: socket.name } }))
+                    .status == "offline";
             }
             console.log("Socket disconnected");
         });

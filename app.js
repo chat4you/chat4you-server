@@ -28,8 +28,6 @@ app.use(formData.union());
 const io = require("socket.io")(server);
 
 const apiRouter = require("./routes/api")(io);
-const chatRouter = require("./routes/chat");
-
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
@@ -39,10 +37,17 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
-app.use(session({ secret: cfg.session_secret }));
+app.use(
+    session({
+        name: "chat.sid",
+        secret: cfg.session_secret,
+        resave: true,
+        store: new session.MemoryStore(),
+        saveUninitialized: true,
+    })
+);
 
 app.use("/api", apiRouter);
-app.use("/", chatRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
@@ -58,4 +63,10 @@ app.use(function (err, req, res, next) {
     // render the error page
     res.status(err.status || 500);
     res.render("error");
+});
+
+process.on("SIGTERM", () => {
+    server.close(() => {
+        "Server shutdown";
+    });
 });
