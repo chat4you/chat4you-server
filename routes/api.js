@@ -163,7 +163,7 @@ module.exports = (io) => {
                 delete req.body.password; // Passord column does not exist in database
                 try {
                     await user.update(req.body);
-                    res.json({ status: "success" });
+                    res.json({ status: "succes" });
                     return;
                 } catch (error) {} //  do not return since the default response is error
             }
@@ -174,21 +174,19 @@ module.exports = (io) => {
     });
 
     io.on("connection", async (socket) => {
-        var socketType;
         await new Promise((resolve) => {
             socket.on("auth", async (data) => {
                 var cookie = utils.cookieParser(data);
                 if (auths.verify(cookie.Auth, cookie.Verify)) {
                     socket.cookieAuth = cookie.Auth; // Save cookie for later
-                    socketType = auths.loginsByCookie[cookie.Auth].accountType;
                     let userData = auths.loginsByCookie[cookie.Auth].userData;
-                    socket.name = userData.name;
+                    socket.user = userData;
                     socket.authenticated = true;
                     socket.emit("auth", {
                         status: "succes",
                         data: userData,
                     });
-                    (await Users.findOne({ where: { name: socket.name } }))
+                    (await Users.findOne({ where: { name: socket.user.name } }))
                         .status == "offline";
                     auths.sockets[userData.name].push(socket);
                     resolve(); // Continue to next step
@@ -200,8 +198,8 @@ module.exports = (io) => {
         console.log("Socket authenticated");
         // If authentication is not succesfull this will never be run
         socket.on("getMessages", async (data) => {
-            if (await auths.userInConversation(socket.name, data.id)) {
-                var messages = await auths.getMessages(data.id);
+            if (await auths.userInConversation(socket.user.id, data.id)) {
+                var messages = await auths.getMessages(parseInt(data.id));
                 socket.emit("getMessages", {
                     status: "succes",
                     id: data.id,
@@ -215,7 +213,10 @@ module.exports = (io) => {
 
         socket.on("message", async (data) => {
             if (
-                await auths.userInConversation(socket.name, data.conversation)
+                await auths.userInConversation(
+                    socket.user.id,
+                    data.conversation
+                )
             ) {
                 data.type = utils.sanitize(data.type);
                 if (data.type == "text") {
@@ -253,14 +254,14 @@ module.exports = (io) => {
                 case "chat":
                     if (
                         typeof data.other == "string" &&
-                        !(await auths.hasContact(socket.name, data.other))
+                        !(await auths.hasContact(socket.user.id, data.other))
                     ) {
                         if (await auths.getUser(data.other)) {
                             // Lets create the conversation
                             let conversation = {
                                 type: "chat",
                                 name: "", // Name will be dynamic for each user
-                                members: [socket.name, data.other],
+                                members: [socket.user.id, data.other],
                                 accepted: [true, false],
                             };
                             let response = await auths.createConverssation(
@@ -290,7 +291,10 @@ module.exports = (io) => {
 
         socket.on("fullnameOf", async (data) => {
             data.name ? (data.name = utils.sanitize(data.name)) : undefined;
-            if (data.name && (await auths.hasContact(data.name, socket.name))) {
+            if (
+                data.name &&
+                (await auths.hasContact(data.name, socket.user.id))
+            ) {
                 let user = await Users.findOne({ where: { name: data.name } });
                 if (user.fullnaem) {
                     socket.emit("fullnameOf", {
@@ -315,21 +319,20 @@ module.exports = (io) => {
             var res;
             if (data.action == "reject") {
                 res = await auths.removeUserFromConversation(
-                    socket.name,
+                    socket.user.id,
                     data.id
                 );
             } else if (data.action == "accept") {
-                res = await auths.acceptConversation(socket.name, data.id);
+                res = await auths.acceptConversation(socket.user.id, data.id);
             }
             socket.emit("acceptReject", res);
         });
 
         socket.on("disconnect", async () => {
-            let socketArray = auths.sockets[socket.name];
+            let socketArray = auths.sockets[socket.user.name];
             socketArray.splice(socketArray.indexOf(socket), 1);
             if (socketArray.length == 0) {
-                (await Users.findOne({ where: { name: socket.name } }))
-                    .status == "offline";
+                socket.user.status == "offline";
             }
             console.log("Socket disconnected");
         });

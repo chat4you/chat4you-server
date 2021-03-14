@@ -133,7 +133,7 @@ class Authmanager {
                 conv.accepted = accepted;
                 console.log(conv);
                 await conv.save();
-                return { status: "success" };
+                return { status: "succes" };
             } else {
                 return { status: "error", error: "Not Implemented" };
             }
