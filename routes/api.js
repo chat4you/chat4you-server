@@ -211,38 +211,65 @@ module.exports = (io) => {
             }
         });
 
-        socket.on("message", async (data) => {
-            if (
-                await auths.userInConversation(
-                    socket.user.id,
-                    data.conversation
-                )
-            ) {
-                data.type = utils.sanitize(data.type);
-                if (data.type == "text") {
-                    // dont want to sanitize image, audio, etc.
-                    data.content = utils.sanitize(data.content);
-                    if (!/\S/i.test(data.content)) {
-                        return;
-                    }
+        socket.on("message", async (userMessage) => {
+            try {
+                if (
+                    !(await auths.userInConversation(
+                        socket.user.id,
+                        userMessage.conversation
+                    ))
+                ) {
+                    socket.emit("message", {
+                        status: "error",
+                        message: "User not in conversation",
+                        id: userMessage.conversation,
+                    });
+                    return;
                 }
-                await auths.addMessage(data);
-                var conversation = await auths.getConversation(
-                    data.conversation
+                userMessage.sent_by = socket.user.id;
+                userMessage.type = utils.sanitize(userMessage.type);
+                switch (userMessage.type) {
+                    case "text":
+                        if (!/\S/i.test(userMessage.content)) {
+                            return; // empty message was sent
+                        }
+                        userMessage.content = utils.sanitize(
+                            userMessage.content
+                        );
+                        break;
+                    default:
+                        socket.emit("message", {
+                            status: "error",
+                            message: "Unknown message type",
+                            id: userMessage.conversation,
+                        });
+                }
+                await auths.addMessage(userMessage);
+                var conversation = await Conversations.findByPk(
+                    userMessage.conversation
                 );
                 for (var i in conversation.members) {
                     if (
                         conversation.accepted[i] &&
-                        auths.sockets[conversation.members[i]] &&
-                        auths.sockets[conversation.members[i]].length >= 1
+                        auths.sockets[conversation.members[i]]?.length >= 1
                     ) {
-                        for (var ii in auths.sockets[conversation.members[i]]) {
-                            let otherSocket =
-                                auths.sockets[conversation.members[i]][ii];
-                            otherSocket.emit("message", data);
-                        }
+                        auths.sockets[conversation.members[i]].map(
+                            (otherSocket) => {
+                                otherSocket.emit("message", {
+                                    status: "succes",
+                                    data: userMessage,
+                                    id: userMessage.conversation,
+                                });
+                            }
+                        );
                     }
                 }
+            } catch (err) {
+                socket.emit("message", {
+                    status: "error",
+                    message: err.message,
+                    id: userMessage?.id,
+                });
             }
         });
 
