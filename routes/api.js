@@ -68,7 +68,7 @@ module.exports = (io) => {
     });
 
     router.get("/me", (req, res) => {
-        res.json(usersBySession[req.session.id]);
+        res.json({ status: "succes", data: usersBySession[req.session.id] });
     });
 
     // User profile update
@@ -146,7 +146,7 @@ module.exports = (io) => {
                 members: { [Op.contains]: [usersBySession[req.session.id].id] },
             },
         });
-        res.json(contacts);
+        res.json({ status: "succes", data: contacts });
     });
 
     // Admin user update
@@ -188,7 +188,7 @@ module.exports = (io) => {
                     });
                     (await Users.findOne({ where: { name: socket.user.name } }))
                         .status == "offline";
-                    auths.sockets[userData.name].push(socket);
+                    auths.sockets[userData.id].push(socket);
                     resolve(); // Continue to next step
                 } else {
                     socket.emit("auth", { status: "verifyFail" });
@@ -251,9 +251,9 @@ module.exports = (io) => {
                 for (var i in conversation.members) {
                     if (
                         conversation.accepted[i] &&
-                        auths.sockets[conversation.members[i]]?.length >= 1
+                        auths.sockets[conversation.members[i]]?.length != 0
                     ) {
-                        auths.sockets[conversation.members[i]].map(
+                        auths.sockets[conversation.members[i]].forEach(
                             (otherSocket) => {
                                 otherSocket.emit("message", {
                                     status: "succes",
@@ -265,24 +265,29 @@ module.exports = (io) => {
                     }
                 }
             } catch (err) {
+                console.error(err);
                 socket.emit("message", {
                     status: "error",
-                    message: err.message,
-                    id: userMessage?.id,
+                    message: "Server error",
+                    id: userMessage?.conversation,
                 });
             }
         });
 
         socket.on("requestContacts", async (data) => {
-            data.other = utils.sanitize(data.other);
-            switch (
-                data.type // You might want to create groups
-            ) {
-                case "chat":
-                    if (
-                        typeof data.other == "string" &&
-                        !(await auths.hasContact(socket.user.id, data.other))
-                    ) {
+            try {
+                data.other = utils.sanitize(data.other);
+                switch (data.type) {
+                    case "chat":
+                        if (
+                            await auths.hasContact(socket.user.id, data.other)
+                        ) {
+                            socket.emit("requestContacts", {
+                                status: "error",
+                                message: "Already in conversation",
+                            });
+                            return;
+                        }
                         if (await auths.getUser(data.other)) {
                             // Lets create the conversation
                             let conversation = {
@@ -300,38 +305,19 @@ module.exports = (io) => {
                         } else {
                             socket.emit("requestContacts", {
                                 status: "error",
-                                error: "Other user dosen't exist",
+                                message: "Other user dosen't exist",
                             });
                         }
-                    } else {
-                        socket.emit("requestContacts", {
-                            status: "error",
-                            error: "Already in conversation",
-                        });
-                    }
-                    break;
+                        break;
 
-                default:
-                    break;
-            }
-        });
-
-        socket.on("fullnameOf", async (data) => {
-            data.name ? (data.name = utils.sanitize(data.name)) : undefined;
-            if (
-                data.name &&
-                (await auths.hasContact(data.name, socket.user.id))
-            ) {
-                let user = await Users.findOne({ where: { name: data.name } });
-                if (user.fullnaem) {
-                    socket.emit("fullnameOf", {
-                        status: "succes",
-                        name: data.name,
-                        fullname: fullname,
-                    });
-                } else {
-                    socket.emit("fullnameOf", { status: "error" });
+                    default:
+                        break;
                 }
+            } catch {
+                socket.emit("requestContacts", {
+                    status: "error",
+                    message: "Internal error",
+                });
             }
         });
 
@@ -356,7 +342,7 @@ module.exports = (io) => {
         });
 
         socket.on("disconnect", async () => {
-            let socketArray = auths.sockets[socket.user.name];
+            let socketArray = auths.sockets[socket.user.id];
             socketArray.splice(socketArray.indexOf(socket), 1);
             if (socketArray.length == 0) {
                 socket.user.status == "offline";

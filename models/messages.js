@@ -7,7 +7,6 @@ Messages.init(
     {
         conversation: {
             type: DataTypes.INTEGER,
-            primaryKey: true,
         },
         type: {
             type: DataTypes.TEXT,

@@ -50,8 +50,8 @@ class Authmanager {
                     userData: user,
                 };
             }
-            if (!this.sockets[username]) {
-                this.sockets[username] = [];
+            if (!this.sockets[user.id]) {
+                this.sockets[user.id] = [];
             }
             return {
                 status: "succes",
