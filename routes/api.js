@@ -45,11 +45,9 @@ module.exports = (io) => {
         res.cookie("Auth", result.cookieAuth);
         res.cookie("Verify", result.cookieVerify);
         console.log(`User ${req.body.username} logged in succesfully.`);
-        if (result.userData.type == "user") {
-            res.json({ login: true, nextPage: "/" });
-        } else if (result.userData.type == "admin") {
+        res.json({ login: true });
+        if (result.userData.type == "admin") {
             req.session.admin = true;
-            res.json({ login: true, nextPage: "/administration" });
         }
     });
 
@@ -60,7 +58,7 @@ module.exports = (io) => {
         } catch {}
         req.session.destroy();
         auths.logout(req.cookies.Auth, req.cookies.Verify);
-        res.send("logout");
+        res.send("bye");
     });
 
     router.get("/check-login", (req, res) => {
@@ -68,7 +66,10 @@ module.exports = (io) => {
     });
 
     router.get("/me", (req, res) => {
-        res.json({ status: "succes", data: usersBySession[req.session.id] });
+        res.json({
+            status: usersBySession[req.session.id] ? "succes" : "error",
+            data: usersBySession[req.session.id],
+        });
     });
 
     // User profile update
@@ -135,7 +136,7 @@ module.exports = (io) => {
         if (user) {
             res.send(user.fullname);
         } else {
-            res.send("--> ERROR <--");
+            res.sendStatus(404);
         }
     });
 
@@ -249,11 +250,8 @@ module.exports = (io) => {
                     userMessage.conversation
                 );
                 for (var i in conversation.members) {
-                    if (
-                        conversation.accepted[i] &&
-                        auths.sockets[conversation.members[i]]?.length != 0
-                    ) {
-                        auths.sockets[conversation.members[i]].forEach(
+                    if (conversation.accepted[i]) {
+                        auths.sockets[conversation.members[i]]?.forEach(
                             (otherSocket) => {
                                 otherSocket.emit("message", {
                                     status: "succes",
