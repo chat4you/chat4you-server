@@ -132,7 +132,12 @@ module.exports = (io) => {
     });
 
     router.get("/users/:user/fullname", async (req, res) => {
-        let user = await Users.findByPk(parseInt(req.params.user));
+        let id = parseInt(req.params.user);
+        if (!id) {
+            res.sendStatus(404);
+            return;
+        }
+        let user = await Users.findByPk(id);
         if (user) {
             res.send(user.fullname);
         } else {

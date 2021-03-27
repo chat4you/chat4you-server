@@ -18,6 +18,9 @@ Users.init(
         },
         password_hash: {
             type: DataTypes.TEXT,
+            get() {
+                return "HIDDEN";
+            },
         },
         created: {
             type: DataTypes.DATE,

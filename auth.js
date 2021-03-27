@@ -1,5 +1,5 @@
 const crypto = require("crypto");
-const { sanitize, radnStr, hash } = require("./utils");
+const { sanitize, randStr, hash } = require("./utils");
 const cfg = require("./config");
 // Setup database
 const { Op } = require("sequelize");
@@ -31,9 +31,8 @@ class Authmanager {
             },
         });
         if (user) {
-            var randomString = radnStr(50);
+            var randomString = randStr(50);
             var hashOfString = hash(randomString, cfg.secret);
-            delete user.password_hash; // Hide important information
             this.loginsByCookie[randomString] = {
                 username: username,
                 userData: user,
