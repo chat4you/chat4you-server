@@ -1,16 +1,16 @@
 const crypto = require("crypto");
 
-function cookieParser(cookie) {
-    var cookies = {};
-    var splited = cookie.split(";");
-    for (var i = 0; i < splited.length; i++) {
-        var keinahnung = splited[i].split("=");
+function cookieParser (cookie) {
+    const cookies = {};
+    const splited = cookie.split(";");
+    for (let i = 0; i < splited.length; i++) {
+        const keinahnung = splited[i].split("=");
         cookies[keinahnung[0].trim()] = keinahnung[1];
     }
     return cookies;
 }
 
-function sanitize(text) {
+function sanitize (text) {
     return String(text)
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
@@ -18,12 +18,12 @@ function sanitize(text) {
         .replace(/'/g, "&apos;");
 }
 
-function hash(text, salt) {
-    var hash = crypto.createHmac("sha512", salt);
+function hash (text, salt) {
+    const hash = crypto.createHmac("sha512", salt);
     return hash.update(text).digest("hex");
 }
 
-function randStr(size) {
+function randStr (size) {
     return crypto.randomBytes(size).toString("hex").slice(0, size);
 }
 

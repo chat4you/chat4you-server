@@ -1,22 +1,20 @@
-var express = require("express");
-var router = express.Router();
+const express = require("express");
+const router = express.Router();
 const utils = require("../utils");
 const fs = require("fs");
 const sharp = require("sharp");
-const { sanitize } = require("../utils");
 const createError = require("http-errors");
 const cfg = require("../config");
 
 const auths = new (require("../auth"))();
 
 const Conversations = require("../models/conversations");
-const Messages = require("../models/messages");
 const Users = require("../models/users");
 const { Op } = require("sequelize");
 
-var ignore = /^\/?(login|check-login)/; // RegEx for urls without authentication
+const ignore = /^\/?(login|check-login)/; // RegEx for urls without authentication
 
-var usersBySession = {};
+const usersBySession = {};
 
 module.exports = (io) => {
     router.use((req, res, next) => {
@@ -32,8 +30,8 @@ module.exports = (io) => {
 
     // Login
     router.post("/login", async (req, res) => {
-        let result = await auths.login(req.body.username, req.body.password);
-        if (result.status != "succes") {
+        const result = await auths.login(req.body.username, req.body.password);
+        if (result.status !== "succes") {
             res.json({ login: false });
             return;
         }
@@ -46,7 +44,7 @@ module.exports = (io) => {
         res.cookie("Verify", result.cookieVerify);
         console.log(`User ${req.body.username} logged in succesfully.`);
         res.json({ login: true });
-        if (result.userData.type == "admin") {
+        if (result.userData.type === "admin") {
             req.session.admin = true;
         }
     });
@@ -62,7 +60,7 @@ module.exports = (io) => {
     });
 
     router.get("/check-login", (req, res) => {
-        res.json({ login: req.session.login ? true : false });
+        res.json({ login: !!req.session.login });
     });
 
     router.get("/me", (req, res) => {
@@ -93,7 +91,7 @@ module.exports = (io) => {
                 },
             });
         } else {
-            let fileBuffer = fs.readFileSync(req.body.profileImage.path);
+            const fileBuffer = fs.readFileSync(req.body.profileImage.path);
             if (fileBuffer.length != 0) {
                 try {
                     await sharp(fileBuffer)
@@ -111,7 +109,7 @@ module.exports = (io) => {
                     );
                 }
             }
-            let user = usersBySession[req.session.id];
+            const user = usersBySession[req.session.id];
             user.fullname = req.body.fullname;
             user.email = req.body.email;
             req.session.userData = user;
@@ -122,12 +120,12 @@ module.exports = (io) => {
 
     // Profile images
     router.get("/users/:user/profile-image/", async (req, res) => {
-        let id = parseInt(req.params.user);
+        const id = parseInt(req.params.user);
         let fpath = `data/images/${id}.png`;
         if (!fs.existsSync(fpath)) {
             fpath = "data/images/default.png";
         }
-        let readStream = fs.createReadStream(fpath);
+        const readStream = fs.createReadStream(fpath);
         readStream.pipe(res);
     });
 
@@ -179,33 +177,38 @@ module.exports = (io) => {
         }
     });
 
-    io.on("connection", async (socket) => {
-        await new Promise((resolve) => {
-            socket.on("auth", async (data) => {
-                var cookie = utils.cookieParser(data);
-                if (auths.verify(cookie.Auth, cookie.Verify)) {
-                    socket.cookieAuth = cookie.Auth; // Save cookie for later
-                    let userData = auths.loginsByCookie[cookie.Auth].userData;
-                    socket.user = userData;
-                    socket.authenticated = true;
-                    socket.emit("auth", {
-                        status: "succes",
-                        data: userData,
-                    });
-                    (await Users.findOne({ where: { name: socket.user.name } }))
-                        .status == "offline";
-                    auths.sockets[userData.id].push(socket);
-                    resolve(); // Continue to next step
-                } else {
-                    socket.emit("auth", { status: "verifyFail" });
-                }
+    io.use(async (socket, next) => {
+        try {
+            const cookie = utils.cookieParser(socket.handshake.auth.cookies);
+            if (auths.verify(cookie.Auth, cookie.Verify)) {
+                socket.cookieAuth = cookie.Auth; // Save cookie for later
+                const userData = auths.loginsByCookie[cookie.Auth].userData;
+                socket.user = userData;
+                socket.authenticated = true;
+                socket.emit("auth", {
+                    status: "succes",
+                    data: userData,
+                });
+                (await Users.findOne({ where: { name: socket.user.name } }))
+                    .status = "offline";
+                auths.sockets[userData.id].push(socket);
+                next();
+            } else {
+                socket.emit("auth", { status: "verifyFail" });
+                next(new Error("Cokkie virication failed"));
+            }
+        } catch (err) {
+            socket.emit("auth", {
+                status: "error",
+                message: process.env.DEBUG ? err.message : "Fatal error",
             });
-        });
-        console.log("Socket authenticated");
-        // If authentication is not succesfull this will never be run
+        }
+    });
+
+    io.on("connection", async (socket) => {
         socket.on("getMessages", async (data) => {
             if (await auths.userInConversation(socket.user.id, data.id)) {
-                var messages = await auths.getMessages(parseInt(data.id));
+                const messages = await auths.getMessages(parseInt(data.id));
                 socket.emit("getMessages", {
                     status: "succes",
                     id: data.id,
@@ -251,10 +254,10 @@ module.exports = (io) => {
                         });
                 }
                 await auths.addMessage(userMessage);
-                var conversation = await Conversations.findByPk(
+                const conversation = await Conversations.findByPk(
                     userMessage.conversation
                 );
-                for (var i in conversation.members) {
+                for (let i in conversation.members) {
                     if (conversation.accepted[i]) {
                         auths.sockets[conversation.members[i]]?.forEach(
                             (otherSocket) => {
@@ -277,31 +280,37 @@ module.exports = (io) => {
             }
         });
 
-        socket.on("requestContacts", async (data) => {
+        socket.on("requestContact", async (data) => {
             try {
-                data.other = utils.sanitize(data.other);
+                data.other = parseInt(data.other); // TBD: allow string for suggestions
+                if (!data.other) {
+                    socket.emit("requestContact", {
+                        status: "error",
+                        message: "Invalid input",
+                    });
+                    return;
+                }
                 switch (data.type) {
                     case "chat":
                         if (
                             await auths.hasContact(socket.user.id, data.other)
                         ) {
-                            socket.emit("requestContacts", {
+                            socket.emit("requestContact", {
                                 status: "error",
+                                other: data.other,
                                 message: "Already in conversation",
                             });
                             return;
                         }
-                        if (await auths.getUser(data.other)) {
-                            // Lets create the conversation
-                            let conversation = {
+                        if (await Users.findByPk(data.other)) {
+                            // create the conversation
+                            const conversation = {
                                 type: "chat",
-                                name: "", // Name will be dynamic for each user
+                                name: "", // Name will be different for each user
                                 members: [socket.user.id, data.other],
                                 accepted: [true, false],
                             };
-                            let response = await auths.createConverssation(
-                                conversation
-                            );
+                            await auths.createConverssation(conversation);
                             socket.emit("requestContacts", {
                                 status: "succes",
                             });
@@ -314,41 +323,61 @@ module.exports = (io) => {
                         break;
 
                     default:
+                        socket.emit("requestContacts", {
+                            status: "error",
+                            message: "Unknown type",
+                        });
                         break;
                 }
-            } catch {
-                socket.emit("requestContacts", {
+            } catch (err) {
+                socket.emit("requestContact", {
                     status: "error",
-                    message: "Internal error",
+                    message:
+                        process.env.DEBUG === "true"
+                            ? err.message
+                            : "Internal error",
                 });
             }
         });
 
         socket.on("acceptReject", async (data) => {
-            if (typeof data.id != "number") {
+            try {
+                data.id = parseInt(data.id);
+                if (!data.id && typeof data.action !== "string") {
+                    socket.emit("acceptReject", {
+                        status: "error",
+                        error: "Invalid input",
+                    });
+                    return;
+                }
+                if (data.action === "reject") {
+                    await auths.removeUserFromConversation(
+                        socket.user.id,
+                        data.id,
+                    );
+                } else if (data.action === "accept") {
+                    await auths.acceptConversation(socket.user.id, data.id);
+                }
                 socket.emit("acceptReject", {
-                    status: "error",
-                    error: "Id is not a number",
+                    status: "sucess",
+                    action: data.action,
                 });
-                return;
+            } catch (err) {
+                socket.emit("requestContact", {
+                    status: "error",
+                    message:
+                        process.env.DEBUG === "true"
+                            ? err.message
+                            : "Internal error",
+                });
             }
-            var res;
-            if (data.action == "reject") {
-                res = await auths.removeUserFromConversation(
-                    socket.user.id,
-                    data.id
-                );
-            } else if (data.action == "accept") {
-                res = await auths.acceptConversation(socket.user.id, data.id);
-            }
-            socket.emit("acceptReject", res);
         });
 
         socket.on("disconnect", async () => {
-            let socketArray = auths.sockets[socket.user.id];
+            const socketArray = auths.sockets[socket.user.id];
             socketArray.splice(socketArray.indexOf(socket), 1);
-            if (socketArray.length == 0) {
-                socket.user.status == "offline";
+            if (socketArray.length === 0) {
+                socket.user.status = "offline";
             }
             console.log("Socket disconnected");
         });

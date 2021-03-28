@@ -1,4 +1,3 @@
-const crypto = require("crypto");
 const { sanitize, randStr, hash } = require("./utils");
 const cfg = require("./config");
 // Setup database
@@ -13,26 +12,26 @@ Messages.sync({ alter: true });
 Users.sync({ alter: true });
 
 class Authmanager {
-    constructor() {
+    constructor () {
         this.sockets = {};
         this.loginsByCookie = {};
         this.cookiesByName = {};
     }
 
-    async login(username, password) {
+    async login (username, password) {
         // some anti xss
         username = sanitize(username);
         // Create socket list if it dosent exists
-        var passhash = hash(password, cfg.secret);
-        let user = await Users.findOne({
+        const passhash = hash(password, cfg.secret);
+        const user = await Users.findOne({
             where: {
                 name: username,
                 password_hash: passhash,
             },
         });
         if (user) {
-            var randomString = randStr(50);
-            var hashOfString = hash(randomString, cfg.secret);
+            const randomString = randStr(50);
+            const hashOfString = hash(randomString, cfg.secret);
             this.loginsByCookie[randomString] = {
                 username: username,
                 userData: user,
@@ -63,7 +62,7 @@ class Authmanager {
         }
     }
 
-    logout(cookieAuth, cookieVerify) {
+    logout (cookieAuth, cookieVerify) {
         if (this.verify(cookieAuth, cookieVerify)) {
             delete this.loginsByCookie[cookieAuth];
             return { status: "succes" };
@@ -72,9 +71,9 @@ class Authmanager {
         }
     }
 
-    verify(cookieAuth, cookieVerify) {
+    verify (cookieAuth, cookieVerify) {
         if (
-            hash(cookieAuth, cfg.secret) == cookieVerify &&
+            hash(cookieAuth, cfg.secret) === cookieVerify &&
             this.loginsByCookie[cookieAuth]
         ) {
             return true;
@@ -83,8 +82,8 @@ class Authmanager {
         }
     }
 
-    async userInConversation(name, convId) {
-        let result = await Conversations.findOne({
+    async userInConversation (name, convId) {
+        const result = await Conversations.findOne({
             where: {
                 [Op.and]: [
                     { id: parseInt(convId) },
@@ -103,15 +102,16 @@ class Authmanager {
         }
     }
 
-    async removeUserFromConversation(user, convId) {
+    async removeUserFromConversation (user, convId) {
         if (await this.userInConversation(user, convId)) {
-            let conv = await Conversations.findOne({ where: { id: convId } });
-            if (conv.type == "chat") {
+            const conv = await Conversations.findOne({ where: { id: convId } });
+            if (conv.type === "chat") {
                 await Conversations.destroy({
+                    // eslint-disable-next-line no-undef
                     where: { id: paresInt(convId) },
                 });
                 return { status: "succes" };
-            } else if (conv.type == "group") {
+            } else if (conv.type === "group") {
                 console.warn("Groups not implemented");
                 return { status: "error", error: "Not Implemnted yet" };
             }
@@ -120,17 +120,14 @@ class Authmanager {
         }
     }
 
-    async acceptConversation(user, convId) {
+    async acceptConversation (user, convId) {
         if (await this.userInConversation(user, convId)) {
-            console.log("accepting conversation..");
-            let conv = await Conversations.findOne({ where: { id: convId } });
-            if (conv.type == "chat" || conv.type == "group") {
-                console.log(conv);
-                let accepted = conv.accepted; // Workaround since sequelize dosnet detect changes in array
+            const conv = await Conversations.findOne({ where: { id: convId } });
+            if (conv.type === "chat" || conv.type === "group") {
+                const accepted = conv.accepted; // Workaround since sequelize dosent detect changes in array
                 accepted[conv.members.indexOf(user)] = true;
                 conv.accepted = null;
                 conv.accepted = accepted;
-                console.log(conv);
                 await conv.save();
                 return { status: "succes" };
             } else {
@@ -142,19 +139,19 @@ class Authmanager {
         }
     }
 
-    async getMessages(convId, startTime) {
+    async getMessages (convId, startTime) {
         return await Messages.findAll({
             where: { conversation: parseInt(convId) },
             order: [["sent", "ASC"]],
         });
     }
 
-    async setStatus(name, status) {
-        let user = await this.getUser(name);
+    async setStatus (name, status) {
+        const user = await this.getUser(name);
         user.status = status;
     }
 
-    async getStatus(name) {
+    async getStatus (name) {
         return (
             await Users.findOne({
                 where: { name: sanitize(name) },
@@ -163,7 +160,7 @@ class Authmanager {
         ).status;
     }
 
-    async addMessage(msg) {
+    async addMessage (msg) {
         return await Messages.create({
             conversation: parseInt(msg.conversation),
             sent: sequelize.fn("NOW"),
@@ -173,8 +170,8 @@ class Authmanager {
         });
     }
 
-    async hasContact(user1, user2) {
-        let response = await Conversations.findOne({
+    async hasContact (user1, user2) {
+        const response = await Conversations.findOne({
             where: {
                 [Op.and]: [
                     { members: { [Op.contains]: [user1, user2] } },
@@ -189,7 +186,7 @@ class Authmanager {
         }
     }
 
-    async createConverssation(conversation) {
+    async createConverssation (conversation) {
         return await Conversations.create({
             id: (await Conversations.count()) + 1,
             name: conversation.name,

@@ -1,7 +1,6 @@
-var http = require("http");
+const http = require("http");
 const createError = require("http-errors");
 const formData = require("express-form-data");
-const os = require("os");
 const express = require("express");
 const path = require("path");
 const cookieParser = require("cookie-parser");
@@ -12,11 +11,11 @@ const cfg = require("./config");
 // Server setup
 const app = express();
 app.set("port", cfg.port);
-var server = http.createServer(app).listen(cfg.port);
+const server = http.createServer(app).listen(cfg.port);
 
 // form data configuration
 const formOpts = {
-    uploadDir: __dirname + "/uploads",
+    uploadDir: path.join(__dirname, "/uploads"),
     autoClean: true,
 };
 app.use(formData.parse(formOpts));
@@ -28,6 +27,14 @@ app.use(formData.union());
 const io = require("socket.io")(server);
 
 const apiRouter = require("./routes/api")(io);
+
+const sessionConfig = {
+    name: "chat.sid",
+    secret: cfg.session_secret,
+    resave: true,
+    store: new session.MemoryStore(),
+    saveUninitialized: true,
+};
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
@@ -37,15 +44,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
-app.use(
-    session({
-        name: "chat.sid",
-        secret: cfg.session_secret,
-        resave: true,
-        store: new session.MemoryStore(),
-        saveUninitialized: true,
-    })
-);
+app.use(session(sessionConfig));
 
 app.use("/api", apiRouter);
 
@@ -58,7 +57,7 @@ app.use(function (req, res, next) {
 app.use(function (err, req, res, next) {
     // set locals, only providing error in development
     res.locals.message = err.message;
-    res.locals.error = req.app.get("env") === "development" ? err : {};
+    res.locals.error = process.env.DEBUG === "true" ? err : {};
 
     // render the error page
     res.status(err.status || 500);

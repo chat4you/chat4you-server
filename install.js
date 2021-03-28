@@ -7,19 +7,19 @@ const rl = readline.createInterface({
     output: process.stdout,
 });
 
-async function dbInstall() {
-    let unchanged = [];
-    let user = await rl.question("PostgreSQL username: ");
+async function dbInstall () {
+    const unchanged = [];
+    const user = await rl.question("PostgreSQL username: ");
     !/\S/i.test(user) ? (cfgTemplate.db.user = user) : unchanged.push("user");
-    let passwd = await rl.question("PostgreSQL password: ");
+    const passwd = await rl.question("PostgreSQL password: ");
     cfgTemplate.db.password = passwd;
-    let host = await rl.question("PostgreSQL host: ");
+    const host = await rl.question("PostgreSQL host: ");
     !/\S/i.test(host) ? (cfgTemplate.db.host = host) : unchanged.push("host");
-    let database = await rl.question("PostgreSQL database: ");
+    const database = await rl.question("PostgreSQL database: ");
     !/\S/i.test(database)
         ? (cfgTemplate.db.user = database)
         : unchanged.push("database name");
-    let port = await rl.question("PostgreSQL port: ");
+    const port = await rl.question("PostgreSQL port: ");
     /\d+/i.test(port)
         ? (cfgTemplate.db.user = parseInt(port))
         : unchanged.push("user");
@@ -29,6 +29,6 @@ async function dbInstall() {
     }
     try {
         console.log("Checking connection . . .");
-        let testClient = new Client(cfgTemplate.db);
+        const testClient = new Client(cfgTemplate.db);
     } catch (error) {}
 }
