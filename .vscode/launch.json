@@ -6,6 +6,7 @@
             "type": "node-terminal",
             "request": "launch",
             "command": "npm run start",
+            "envFile": "${workspaceFolder}/.env",
             "cwd": "${workspaceFolder}"
         }
     ]

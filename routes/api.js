@@ -311,11 +311,11 @@ module.exports = (io) => {
                                 accepted: [true, false],
                             };
                             await auths.createConverssation(conversation);
-                            socket.emit("requestContacts", {
+                            socket.emit("requestContact", {
                                 status: "succes",
                             });
                         } else {
-                            socket.emit("requestContacts", {
+                            socket.emit("requestContact", {
                                 status: "error",
                                 message: "Other user dosen't exist",
                             });
@@ -323,7 +323,7 @@ module.exports = (io) => {
                         break;
 
                     default:
-                        socket.emit("requestContacts", {
+                        socket.emit("requestContact", {
                             status: "error",
                             message: "Unknown type",
                         });
@@ -359,11 +359,11 @@ module.exports = (io) => {
                     await auths.acceptConversation(socket.user.id, data.id);
                 }
                 socket.emit("acceptReject", {
-                    status: "sucess",
+                    status: "succes",
                     action: data.action,
                 });
             } catch (err) {
-                socket.emit("requestContact", {
+                socket.emit("acceptReject", {
                     status: "error",
                     message:
                         process.env.DEBUG === "true"

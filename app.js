@@ -8,6 +8,8 @@ const logger = require("morgan");
 const session = require("express-session");
 const cfg = require("./config");
 
+process.env.DEBUG && console.log("Running in debug mode");
+
 // Server setup
 const app = express();
 app.set("port", cfg.port);

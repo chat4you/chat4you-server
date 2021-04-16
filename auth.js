@@ -107,8 +107,7 @@ class Authmanager {
             const conv = await Conversations.findOne({ where: { id: convId } });
             if (conv.type === "chat") {
                 await Conversations.destroy({
-                    // eslint-disable-next-line no-undef
-                    where: { id: paresInt(convId) },
+                    where: { id: parseInt(convId) },
                 });
                 return { status: "succes" };
             } else if (conv.type === "group") {
