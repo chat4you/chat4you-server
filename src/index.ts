@@ -10,6 +10,7 @@ import { Server } from "socket.io";
 
 import config from "../config.json";
 import logger from "./logger";
+import {Status} from "./types"
 
 // Http and app setup
 const app = express();
@@ -60,12 +61,11 @@ app.use((req, res, next) => {
     next(createError(404));
 });
 
-app.use((err: HttpError, req: Request, res: Response, next: NextFunction) => {
+app.use((err: HttpError, req: Request, res: Response<Status<string>>, next: NextFunction) => {
     // render the error page
     res.status(err.status || 500);
-    res.send({
+    res.json({
         status: "error",
-        code: err.status || 500,
         message: err.message,
     });
 });

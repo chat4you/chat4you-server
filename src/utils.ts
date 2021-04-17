@@ -23,6 +23,6 @@ export function hash(text: string, salt: string) {
     return hash.update(text).digest("hex");
 }
 
-export function randStr(size: number) {
+export function randomString(size: number) {
     return crypto.randomBytes(size).toString("hex").slice(0, size);
 }

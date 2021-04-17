@@ -1,7 +1,10 @@
 import { Sequelize } from "sequelize";
-import config from "../../config.json";
+import config from "../../config.json"; 
+import Conversation from "./conversation";
+import Message from "./message";
+import User from "./user";
 
-export default new Sequelize({
+export const DB: Sequelize = new Sequelize({
     host: config.db.host,
     database: config.db.database,
     password: config.db.password,
@@ -9,4 +12,10 @@ export default new Sequelize({
     username: config.db.user,
     dialect: "postgres",
     logging: null,
-});
+})
+
+export {
+    Conversation,
+    Message,
+    User
+}
